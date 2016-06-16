@@ -1,5 +1,7 @@
 # Overview
 
+* Version update to 2.3.100
+
 # Prerequisites
 
 Roddy currently needs a JDK / JRE installed in either ~/.roddy/runtime or ~/.roddy/runtimeDevel
