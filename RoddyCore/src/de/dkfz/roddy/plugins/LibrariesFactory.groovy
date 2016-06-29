@@ -227,8 +227,10 @@ public class LibrariesFactory extends Initializable {
         boolean warningUnzippedDirectoriesMissing = false;
 
         for (File pBaseDirectory : pluginDirectories) {
+	    logger.postSometimesInfo("Parsing plugins folder: ${pBaseDirectory}");
             File[] directoryList = pBaseDirectory.listFiles().sort() as File[];
             for (File pEntry in directoryList) {
+	        logger.postRareInfo("  Parsing plugin folder: ${pEntry}");
                 String dirName = pEntry.getName();
                 boolean isZip = dirName.endsWith(".zip");
                 boolean unzippedDirectoryExists = false;
@@ -277,6 +279,7 @@ public class LibrariesFactory extends Initializable {
     private static List<Tuple2<File, String[]>> sortPluginDirectories(List<Tuple2<File, String[]>> collectedPluginDirectories) {
         collectedPluginDirectories = collectedPluginDirectories.sort {
             Tuple2<File, String[]> left, Tuple2<File, String[]> right ->
+				logger.postRareInfo("Call to plugin directory sort for ${left.x} vs ${right.x}");
                 List<String> splitLeft = left.x.name.split("[_:.-]") as List;
                 List<String> splitRight = right.x.name.split("[_:.-]") as List;
                 Tuple5<String, Integer, Integer, Integer, Integer> tLeft = new Tuple5<>(
@@ -323,6 +326,7 @@ public class LibrariesFactory extends Initializable {
 
         Map<String, Map<String, PluginInfo>> _mapOfPlugins = [:];
         for (Tuple2<File, String[]> _entry : collectedPluginDirectories) {
+			logger.postRareInfo("Processing plugin entry: ${_entry.x}")
             File pEntry = _entry.x;
             String[] splitName = _entry.y;//pEntry.getName().split(StringConstants.SPLIT_UNDERSCORE); //First split for .zip then for the version
 
