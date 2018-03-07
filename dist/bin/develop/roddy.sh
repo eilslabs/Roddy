@@ -33,32 +33,26 @@ if [[ "$parm1" == "compile" ]]; then
     [[ ! -d $JDK_HOME ]] && echo "There was no JDK home found. Roddy cannot compile workflows." && exit 1
     source ${SCRIPTS_DIR}/compileRoddyBinary.sh
     exit 0
-elif [[ "$parm1" == "pack" ]]; then
-    $GROOVY_BINARY ${SCRIPTS_DIR}/addChangelistVersionTag.groovy CHANGELIST.md RoddyCore/buildversion.txt
-    major=`head RoddyCore/buildversion.txt -n 1`
-    minor=`tail RoddyCore/buildversion.txt -n 1`
+elif [[ "$parm1" == "install" ]]; then
+    export tagID=$2
+    git tag | grep $tagID
+    [[ $? -ne 0 ]] && echo "Tag id ${tagID} could not be found. Please make sure, that the Roddy version is available in your local repository." && exit 1
 
-    packedRoddyDir=${RODDY_DIRECTORY}/dist/bin/${major}.${minor}
-    packedZip=${RODDY_DIRECTORY}/dist/bin/Roddy_${major}.${minor}.zip
-    developmentRoddyDir=${RODDY_DIRECTORY}/dist/bin/develop
-    mkdir -p $packedRoddyDir
+    export tempDir=`mktemp -d -t RODDY_INSTALL.XXXXXXXXX`
+    export myDir=`readlink -f $RODDY_BINARY_DIR/../`
+    [[ -d $myDir/$tagID ]] && echo "The target release directory already exists." && exit 1
 
-    nfoFile=${packedRoddyDir}/Roddy.jar.nfo
-    cp -r $developmentRoddyDir/* $packedRoddyDir
-
-    git status > ${filename}.nfo
-    svn info > ${filename}.nfo
-    svn status >> ${filename}.nfo
-    find ${packedRoddyDir} >> ${nfoFile}
-    ls -l ${packedRoddyDir} >> ${nfoFile}
-
-    cd ${RODDY_DIRECTORY}/dist/bin
-    zip -r9 $packedZip ${major}.${minor}
-
+    # Check the Tag and abort if necessary
+    ( git clone -l -b $tagID . $tempDir; \
+      cd $tempDir; \
+      ./roddy.sh compile; \
+      cp -r dist/bin/develop $myDir/$tagID )
+    rm -rf $tempDir
     exit 0
 elif [[ "$parm1" == "compileplugin" ]]; then
     echo "Using Roddy binary "`basename ${RODDY_BINARY}`
     echo "  Roddy version: "$(basename $(dirname ${RODDY_BINARY}))
+    [[ ! -f ${RODDY_BINARY} ]] && echo "The requested Roddy version does not exist or was not build. Please check Roddy version or run './roddy.sh compile'." && exit 1
     [[ ! -d $JDK_HOME ]] && echo "There was no JDK home found. Roddy cannot compile workflows." && exit 1
     source ${SCRIPTS_DIR}/compileRoddyPlugin.sh
     exit 0
