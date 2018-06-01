@@ -6,20 +6,20 @@
 
 package de.dkfz.roddy.core
 
-import de.dkfz.roddy.config.Configuration
-import de.dkfz.roddy.config.ConfigurationError
-import de.dkfz.roddy.config.ConfigurationValue
-import de.dkfz.roddy.execution.jobs.Job
 import de.dkfz.roddy.Constants
 import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.StringConstants
-import de.dkfz.roddy.config.ConfigurationConstants
-import de.dkfz.roddy.config.ToolEntry
+import de.dkfz.roddy.client.RoddyStartupOptions
+import de.dkfz.roddy.config.*
 import de.dkfz.roddy.execution.io.BaseMetadataTable
 import de.dkfz.roddy.execution.io.MetadataTableFactory
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
+import de.dkfz.roddy.execution.jobs.Job
 import de.dkfz.roddy.knowledge.files.BaseFile
+import de.dkfz.roddy.knowledge.metadata.MetadataStoreFactory
+import de.dkfz.roddy.knowledge.metadata.MetadataTableFile
 import de.dkfz.roddy.tools.LoggerWrapper
+import de.dkfz.roddy.tools.RoddyConversionHelperMethods
 import de.dkfz.roddy.tools.RoddyIOHelperMethods
 import groovy.transform.CompileStatic
 import org.apache.commons.io.filefilter.WildcardFileFilter
@@ -47,10 +47,22 @@ class RuntimeService {
     public static final String DIRNAME_BRAWLWORKFLOWS = "brawlworkflows"
     public static final String DIRNAME_CONFIG_FILES = "configurationFiles"
     public static final String RODDY_CENTRAL_EXECUTION_DIRECTORY = "RODDY_CENTRAL_EXECUTION_DIRECTORY"
+    private BaseMetadataTable _metadata
 
     RuntimeService() {
         logger.warning("Reading in jobs is not fully enabled! See RuntimeService readInExecutionContext(). The method does not reconstruct parent files and dependencies.")
     }
+
+    void initializeMetadataStore(Analysis analysis) {
+        if (_metadata == null) {
+            _metadata = MetadataStoreFactory.getTable(analysis)
+        }
+    }
+
+    BaseMetadataTable getMetadata() {
+        return _metadata
+    }
+
 
     /**
      * Loads a list of input data set for the specified analysis.

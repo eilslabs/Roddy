@@ -15,6 +15,7 @@ import de.dkfz.roddy.config.ProjectConfiguration;
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues;
 import de.dkfz.roddy.core.Analysis;
 import de.dkfz.roddy.core.Project
+import de.dkfz.roddy.knowledge.metadata.MetadataTableFile
 import groovy.transform.CompileStatic
 import org.apache.commons.csv.CSVFormat
 import org.junit.Ignore
@@ -61,7 +62,7 @@ public class MetadataTableFactoryTest {
         field.set(null, new CommandLineCall(["--usemetadatatable=" + BaseMetadataTableTest.getResourceFile(BaseMetadataTableTest.correctTable)] as List<String>));
 
         // Try and get and let's hope for the good.
-        def table = MetadataTableFactory.getTable(analysis);
+        def table = MetadataTableFactory.getTable(analysis)
         assert table != null;
         assert table.size() == 8; // Just a basic check, if things were loaded, BaseMetadataTable.read is tested in a different way.
     }

@@ -169,6 +169,7 @@ class ProjectLoader {
 
             // Try to build up the metadata table from here on. Project and analysis are ready.
             MetadataTableFactory.getTable(analysis)
+            // analysis.runtimeService.initializeMetadataStore(analysis)
             return analysis
         } catch (ConfigurationLoaderException ex) {
             logger.severe(ex.message)

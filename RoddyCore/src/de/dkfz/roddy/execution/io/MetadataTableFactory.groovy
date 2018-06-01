@@ -26,16 +26,15 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException
  * <p>
  * Created by heinold on 14.04.16.
  */
-@Deprecated   // See Issue #255.
+@Deprecated   // See Issue #255. Currently, this is rather a reader than actual factory.
 @CompileStatic
 final class MetadataTableFactory {
 
     private static final LoggerWrapper logger = LoggerWrapper.getLogger(LocalExecutionService.class.name)
 
-    private static BaseMetadataTable _cachedTable;
+    private static BaseMetadataTable _cachedTable
 
-    private MetadataTableFactory() {
-    }
+    MetadataTableFactory() {}
 
     /**
      * This method constructs the Metadata table valid for the current Roddy execution!
@@ -49,9 +48,9 @@ final class MetadataTableFactory {
 
         // Create a metadata table from a file
         if (!_cachedTable) {
-            String[] split = Roddy.getCommandLineCall().getOptionValue(RoddyStartupOptions.usemetadatatable).split(StringConstants.SPLIT_COMMA);
-            String file = split[0];
-            String format = split.length == 2 && !RoddyConversionHelperMethods.isNullOrEmpty(split[1]) ? split[1] : null;
+            String[] split = Roddy.getCommandLineCall().getOptionValue(RoddyStartupOptions.usemetadatatable).split(StringConstants.SPLIT_COMMA)
+            String file = split[0]
+            String format = split.length == 2 && !RoddyConversionHelperMethods.isNullOrEmpty(split[1]) ? split[1] : null
 
             def missingColValues = []
             def mandatoryColumns = []
@@ -60,31 +59,25 @@ final class MetadataTableFactory {
                     .split(StringConstants.COMMA)
                     .collectEntries {
                 String colVar ->
-                    ConfigurationValue colVal = cvalues.get(colVar);
+                    ConfigurationValue colVal = cvalues.get(colVar)
                     if (!colVal) {
-                        missingColValues << colVar;
+                        missingColValues << colVar
                     }
 
-                    if (colVal.hasTag("mandatory")) mandatoryColumns << colVal.id;
+                    if (colVal.hasTag("mandatory")) mandatoryColumns << colVal.id
                     return [(colVar.toString()): colVal?.toString()]
             }
 
-            _cachedTable = readTable(new File(file), format, columnIDMap, mandatoryColumns);
+            _cachedTable = readTable(new File(file), format, columnIDMap, mandatoryColumns)
         }
-        return _cachedTable;
-
-/**         Leave it for later?
- // Search for Metadata implementations in any plugin
- // If too many were found, select via analysis xml file.
- // If none possible, select metadata table?
- **/
+        return _cachedTable
     }
 
-    public static BaseMetadataTable readTable(Reader instream, String format, Map<String, String> internalToCustomIDMap, List<String> mandatoryColumns) {
+    static BaseMetadataTable readTable(Reader instream, String format, Map<String, String> internalToCustomIDMap, List<String> mandatoryColumns) {
         CSVFormat tableFormat = convertFormat(format)
         tableFormat = tableFormat.withCommentMarker('#' as char)
                 .withIgnoreEmptyLines()
-                .withHeader();
+                .withHeader()
         CSVParser parser = tableFormat.parse(instream)
         def map = parser.headerMap as Map<String, Integer>
         def collect = parser.records.collect { it.toMap() }
@@ -92,7 +85,7 @@ final class MetadataTableFactory {
         return inputTable
     }
 
-    public static BaseMetadataTable readTable(File file, String format, Map<String, String> internalToCustomIDMap, List<String> mandatoryColumns) {
+    static BaseMetadataTable readTable(File file, String format, Map<String, String> internalToCustomIDMap, List<String> mandatoryColumns) {
         Reader instream
         try {
             instream = new FileReader(file)
@@ -102,8 +95,8 @@ final class MetadataTableFactory {
         }
     }
 
-    public static CSVFormat convertFormat(String format) {
-        if (format == null || format == "") format = "tsv";
+    static CSVFormat convertFormat(String format) {
+        if (format == null || format == "") format = "tsv"
         CSVFormat tableFormat
         switch (format.toLowerCase()) {
             case "tsv":
@@ -120,4 +113,5 @@ final class MetadataTableFactory {
         }
         tableFormat
     }
+
 }

@@ -4,7 +4,7 @@
  * Distributed under the MIT License (license terms are at https://www.github.com/eilslabs/Roddy/LICENSE.txt).
  */
 
-package de.dkfz.roddy.execution.io
+package de.dkfz.roddy.knowledge.metadata
 
 import de.dkfz.roddy.config.ConfigurationError
 import groovy.transform.CompileStatic
@@ -15,7 +15,7 @@ import groovy.transform.CompileStatic
  * extends this one and add all the stuff you need.
  */
 @CompileStatic
-class BaseMetadataTable {
+class Metadata<T extends Metadata<T>> {
 
     // A map translating "external" table column ids to "internal" ones.
     // The mapping is via standard values from some xml files.
@@ -33,35 +33,28 @@ class BaseMetadataTable {
     public static final String INPUT_TABLE_DATASET = "datasetCol"
     public static final String INPUT_TABLE_FILE = "fileCol"
 
-    BaseMetadataTable() {}
+    Metadata() {}
 
-    /**
-     *  Copy constructor for subclasses
-     */
-    BaseMetadataTable(BaseMetadataTable origin) {
-        this.internal2CustomIDMap += origin.internal2CustomIDMap
-        this.custom2InternalIDMap += origin.custom2InternalIDMap
-        this.mandatoryColumns += origin.mandatoryColumns
-        this.headerMap += origin.headerMap
-        this.records += origin.records
+    static T create() {
+        return (T) new Metadata<T>()
     }
 
     /**
-     * Copy construct copies with subsetByColumn. This won't work with the other constructors.
+     *  Kind of copy constructor for subclasses
      */
-    protected BaseMetadataTable(BaseMetadataTable origin, List<Map<String, String>> records) {
-        this.internal2CustomIDMap += origin.internal2CustomIDMap
-        this.custom2InternalIDMap += origin.custom2InternalIDMap
-        this.mandatoryColumns += origin.mandatoryColumns
-        this.headerMap += origin.headerMap
-        this.records += records
+    static T create(Metadata<T> origin) {
+        return create(origin, origin.records)
     }
 
-    static BaseMetadataTable create(Map<String, Integer> headerMap, Map<String, String> internal2CustomIDMap, List<String> mandatoryColumns, List<Map<String, String>> records) {
-        return new BaseMetadataTable(headerMap, internal2CustomIDMap, mandatoryColumns, records)
+    protected static T create(Metadata<T> origin, List<Map<String, String>> records) {
+        return create(origin.headerMap, origin.internal2CustomIDMap, origin.mandatoryColumns, records)
     }
 
-    BaseMetadataTable(Map<String, Integer> headerMap, Map<String, String> internal2CustomIDMap, List<String> mandatoryColumns, List<Map<String, String>> records) {
+    protected static T create(Map<String, Integer> headerMap, Map<String, String> internal2CustomIDMap, List<String> mandatoryColumns, List<Map<String, String>> records) {
+        return (T) new Metadata<T>(headerMap, internal2CustomIDMap, mandatoryColumns, records)
+    }
+
+    protected Metadata(Map<String, Integer> headerMap, Map<String, String> internal2CustomIDMap, List<String> mandatoryColumns, List<Map<String, String>> records) {
         this.internal2CustomIDMap = internal2CustomIDMap
         this.internal2CustomIDMap.each {
             String key, String val -> custom2InternalIDMap[val] = key
@@ -150,10 +143,8 @@ class BaseMetadataTable {
         return records.collect { it.clone() } as List<Map<String, String>>
     }
 
-    BaseMetadataTable unsafeSubsetByColumn(String columnName, String value) {
-
-        // Look into internal mapping table for headernames to varnames
-        return new BaseMetadataTable(
+    T unsafeSubsetByColumn(String columnName, String value) {
+        return create(
                 this,
                 records.findAll { Map<String, String> row ->
                     row.get(columnName) == value
@@ -169,13 +160,13 @@ class BaseMetadataTable {
      * @param check
      * @return
      */
-    BaseMetadataTable subsetByColumn(String columnName, String value) {
+    T subsetByColumn(String columnName, String value) {
         return unsafeSubsetByColumn(columnName, value).assertUniqueness(columnName)
     }
 
 
     /** Given a column names, throw if that column or some higher-priority mandatory column have non-unique values. */
-    BaseMetadataTable assertUniqueness(String columnName = null) {
+    T assertUniqueness(String columnName = null) {
         for(String colToCheck : mandatoryColumnNames) {
             if (listColumn(colToCheck).unique().size() != 1) {
                 throw new RuntimeException("For metadata table column(s) '${columnName}' higher-priority column values for '${colToCheck}' are not unique: ${listColumn(colToCheck).unique().sort()}")
@@ -184,21 +175,20 @@ class BaseMetadataTable {
                 break
             }
         }
-        return this
+        return create(this)
     }
 
-    BaseMetadataTable subsetByDataset(String datasetId) {
+    T subsetByDataset(String datasetId) {
         return subsetByColumn(INPUT_TABLE_DATASET, datasetId)
     }
 
-    BaseMetadataTable unsafeSubsetBy(Map<String, String> columnValueMap) {
-        BaseMetadataTable result = columnValueMap.inject(this) { BaseMetadataTable metaDataTable, String columnName, String value ->
-            metaDataTable.unsafeSubsetByColumn(columnName, value)
-        } as BaseMetadataTable
-        return result
+    T unsafeSubsetBy(Map<String, String> columnValueMap) {
+        return columnValueMap.inject((T) this) { Object metadata, String columnName, String value ->
+            (metadata as T).unsafeSubsetByColumn(columnName, value)
+        }
     }
 
-    BaseMetadataTable subsetBy(Map<String, String> columnValueMap) {
+    T subsetBy(Map<String, String> columnValueMap) {
         return unsafeSubsetBy(columnValueMap).assertUniqueness(columnValueMap.keySet().sort().join(","))
     }
 
