@@ -15,6 +15,6 @@ import de.dkfz.roddy.core.Workflow;
  */
 public class TestAnalysis extends Analysis {
     public TestAnalysis(AnalysisConfiguration configuration) {
-        super("TestAnalysis", null, null, null, configuration);
+        super("TestAnalysis", null, null, configuration);
     }
 }

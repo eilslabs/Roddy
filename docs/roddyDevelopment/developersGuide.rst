@@ -140,7 +140,19 @@ directories and execute gradle with composite build parameters
 
 ::
 
-     ./gradlew build --include-build ../RoddyToolLib/ --include-build ../BatchEuphoria/
+    ./gradlew build --include-build ../RoddyToolLib/ --include-build ../BatchEuphoria/
+
+Note that if you are using a proxy, additional configuration is necessary for gradle. Please add the folling lines with the appropriate values for
+your environment to the file "~/.gradle/gradle.properties":
+
+::
+
+    systemProp.http.proxyHost=
+    systemProp.http.proxyPort=
+    systemProp.https.proxyHost=
+    systemProp.https.proxyPort=
+
+Hosts are specified without the "http[s]://" prefix.
 
 
 Packing Roddy

@@ -720,6 +720,7 @@ public class Roddy {
                         .setTrackUserJobsOnly(trackUserJobsOnly)
                         .setPassEnvironment(applicationProperties.getOrSetBooleanApplicationProperty(Constants.APP_PROPERTY_JOB_MANAGER_PASS_ENVIRONMENT, false))
                         .setTrackOnlyStartedJobs(trackOnlyStartedJobs)
+                        .setHoldJobIsEnabled(applicationProperties.getOrSetBooleanApplicationProperty(Constants.APP_PROPERTY_JOB_MANAGER_HOLDJOBS_ON_SUBMISSION, true))
                         .setUserIdForJobQueries(FileSystemAccessProvider.getInstance().callWhoAmI()).build());
     }
 

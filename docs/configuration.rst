@@ -12,5 +12,5 @@ Configuration topics
     config/bashConfigurationFiles
     config/xmlConfigurationFiles
     config/configFilenamesAndToolEntries
-    config/runtimeConfigurationFiles
-
+    config/metadata
+    config/roddyConfigurationOptions

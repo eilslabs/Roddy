@@ -15,8 +15,8 @@ import de.dkfz.roddy.plugins.BasePlugin;
 
 public class TestPlugin extends BasePlugin {
 
-    public static final String CURRENT_VERSION_STRING = "1.0.37";
-    public static final String CURRENT_VERSION_BUILD_DATE = "Mon Jan 15 16:41:47 CET 2018";
+    public static final String CURRENT_VERSION_STRING = "1.0.38";
+    public static final String CURRENT_VERSION_BUILD_DATE = "Fri Mar 16 16:10:19 CET 2018";
 
     @Override
     public String getVersionInfo() {

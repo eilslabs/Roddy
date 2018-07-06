@@ -1,24 +1,46 @@
 # Work in progress
 
-- Many bugfixes and error message improvements
+* Version update to 3.0.8
 
-- Split-off BatchEuphoria and RoddyToolLib from RoddyCore
+  - Boolean configuration value `1` was incorrectly interpreted as `false`. Fixed to be interpreted as `true`. Added warnings that on the long run only "true" and "false" will be allowed values for Booleans.
 
-- Sphinx-based documentation (for ReadTheDocs.org) 
+  - Grid Engine Support restored
 
-- building with Gradle
+  - Bugfixes
+  
+  - Start-up script reads `INCREASE_BUILD_NUMBER` (true, false) variable defaulting to true, to allow turning off automatic build-number increase.
+  
+  - Basic implementation of a new Brawl DSL based on Groovy. 
+  
+  - Removed `preventJobExecution` configuration variable
+
+* Version update to 3.0.1-3.0.7
+
+  - Bugfix releases
+  
+  - TheRoddyWMS organization
+
+* Version update to 3.0.4 
+
+* Version update to 3.0.0
+
+  - Many bugfixes and error message improvements
+
+  - Split-off BatchEuphoria and RoddyToolLib from RoddyCore. BatchEuphoria has LSF support
+
+  - Sphinx-based documentation (for ReadTheDocs.org) 
+
+  - building with Gradle
+  
+  - continuous integration with Travis and deployment to Github Releases
+  
+  - improved structure and content of output (show plugin directories and loaded XMLs)
 
 * Version update to 2.3.187
 
-* Version update to 2.3.170
-
-* Version update to 2.3.166
-
-* Version update to 2.3.154
-
-* Version update to 2.3.139
-
-* Version update to 2.3.134
+  - Many bugfixes
+  
+  - Improved error messages
 
 * Version update to 2.3.133
 
@@ -30,16 +52,15 @@ Entries here can be marked with (PLANNED) or (WIP). (TEST) is more for the Chang
 
 - (PLANNED) enable and disable runFlags with --run=... and --dontrun=...
 
-- (WIP) Roddy accepts a lot more parameters which might otherwise be configured with the
+- (WIP) Roddy accepts a lot more parameters which can otherwise be configured with the
   application properties file:
-    - useRoddyVersion (ok), usePluginVersion,
-    - pluginDirectories, configurationDirectories
+    - usePluginVersion,
     - commandFactoryClass,
     - executionServiceClass, executionServiceAuth, executionServiceHost, executionServiceUser
     
-    Those parameters all override the settings in the application properties file
+    Those parameters will all override the settings in the application properties file
 
-- (WIP) Integrate slurm as a cluster backend
+- (WIP) Integrate SLURM as a cluster backend
 
 # Changelist
 
@@ -60,14 +81,6 @@ Beta release.
 
 * Version update to 2.2.112
 
-What is Roddy and what is it not?
-- It is not a workflow.
-- It is workflow development framework and you can develop, run and bundle your workflows with it.
-- Roddy is designed to be as independent from the runtime environment as possible. But keep in mind, that
-  this might not be the case for workflows.
-
-Roddy has been tested and successfully used in a docker container together with Sun Grid Engine.
-
 * Version update
 
 - Change the behaviour of file access rights setting:
@@ -76,19 +89,13 @@ Roddy has been tested and successfully used in a docker container together with 
     - Test on startup if access right setting is possible and disable the feature by setting outputAllowAccessRightsModification to false
     - Roddy will check, if the project output folder exists. If it does not exist, it will refuse to run a dataset. This way, the user is forced to create this directory explicitely.
 
-- Setting the location of .roddyExecutionDirectory is possible. 
-  Set RODDY_EXECUTION_DIRECTORY to a (valid) path of your choice in your configuration files.
-  The normal behaviour stays, which is to setup this directory in the project output folder. 
+  - Setting the location of .roddyExecutionDirectory is possible. Set RODDY_EXECUTION_DIRECTORY to a (valid) path of your choice in your configuration files. The normal behaviour stays, which is to setup this directory in the project output folder. 
+  
+  - More checkups will occur, when Roddy starts up. E.g. Roddy will check the accessibility of plugin and configuration directories.
 
-- More checkups will occur, when Roddy starts up. E.g. Roddy will check the accessibility of plugin and configuration
-  directories.
+  - We introduce a new branching scheme from now on. There will be the master branch and an additional development branch. The master branch should only contain stable and tested releases of Roddy. development will be there for everything else.
 
-- We introduce a new branching scheme from now on. There will be the master branch and an additional development branch.
-  The master branch should only contain stable and tested releases of Roddy. development will be there for everything else.
-
-- (WIP) Roddy will now support plugin revisions and compatibility tracks. This is useful, if you have a plugin
-  which depends on other plugins and which you do not want to recompile/ repack, just because another plugin
-  was extended.
+  - (WIP) Roddy will now support plugin revisions and compatibility tracks. This is useful, if you have a plugin which depends on other plugins and which you do not want to recompile/ repack, just because another plugin was extended.
   
     - Plugins can be extended in two ways 
         - horicontal for e.g. hotfixes / revisions and 

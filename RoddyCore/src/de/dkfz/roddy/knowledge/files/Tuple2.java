@@ -9,7 +9,10 @@ package de.dkfz.roddy.knowledge.files;
 /**
  * A file object tuple designed for (generic) job calls with 2 entries
  */
-public class Tuple2<X extends FileObject, Y extends FileObject> extends AbstractFileObjectTuple {
+public class Tuple2<
+        X extends FileObject,
+        Y extends FileObject>
+        extends AbstractFileObjectTuple {
     public final X value0;
     public final Y value1;
 

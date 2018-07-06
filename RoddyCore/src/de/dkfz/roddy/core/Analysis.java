@@ -51,11 +51,6 @@ public class Analysis {
     private final Project project;
 
     /**
-     * An analysis has a single link to a workflow but a workflow can be used by multiple workflows.
-     */
-    private final Workflow workflow;
-
-    /**
      * An analysis is directly linked to a configuration
      */
     private final Configuration configuration;
@@ -71,10 +66,9 @@ public class Analysis {
      */
     private RuntimeService runtimeService;
 
-    public Analysis(String name, Project project, Workflow workflow, RuntimeService runtimeService, AnalysisConfiguration configuration) {
+    public Analysis(String name, Project project, RuntimeService runtimeService, AnalysisConfiguration configuration) {
         this.name = name;
         this.project = project;
-        this.workflow = workflow;
         this.configuration = configuration;
         this.runtimeService = runtimeService;
     }
@@ -85,10 +79,6 @@ public class Analysis {
 
     public Project getProject() {
         return project;
-    }
-
-    public Workflow getWorkflow() {
-        return workflow;
     }
 
     public String getUsername() {
@@ -122,7 +112,7 @@ public class Analysis {
     @Deprecated
     private ContextConfiguration _contextConfiguration = null;
 
-    public Configuration getConfiguration() {
+    public AnalysisConfiguration getConfiguration() {
         if (_contextConfiguration == null)
             _contextConfiguration = new ContextConfiguration((AnalysisConfiguration) this.configuration, (ProjectConfiguration) this.project.getConfiguration());
         return _contextConfiguration;
@@ -141,7 +131,7 @@ public class Analysis {
      */
     public File getInputBaseDirectory() {
         if (inputBaseDirectory == null)
-            inputBaseDirectory = getRuntimeService().getInputFolderForAnalysis(this);
+            inputBaseDirectory = getRuntimeService().getInputBaseDirectory(this);
         assert (inputBaseDirectory != null);
         return inputBaseDirectory;
     }
@@ -152,7 +142,7 @@ public class Analysis {
      * @return
      */
     public File getOutputBaseDirectory() {
-        File outputBaseDirectory = getRuntimeService().getOutputFolderForAnalysis(this);
+        File outputBaseDirectory = getRuntimeService().getOutputBaseDirectory(this);
         assert (outputBaseDirectory != null);
         return outputBaseDirectory;
     }
@@ -163,7 +153,7 @@ public class Analysis {
      * @return
      */
     public File getOutputAnalysisBaseDirectory() {
-        return getRuntimeService().getOutputFolderForAnalysis(this);
+        return getRuntimeService().getOutputBaseDirectory(this);
     }
 
     public List<DataSet> getListOfDataSets() {
@@ -203,15 +193,17 @@ public class Analysis {
         long creationCheckPoint = System.nanoTime();
 
         for (DataSet ds : selectedDatasets) {
-            if (level.isOrWasAllowedToSubmitJobs && !canStartJobs(ds)) {
+            if (level.allowedToSubmitJobs && !canStartJobs(ds)) {
                 logger.postAlwaysInfo("The " + Constants.PID + " " + ds.getId() + " is still running and will be skipped for the process.");
                 continue;
             }
 
-            ExecutionContext ec = new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), this, ds, level, ds.getOutputFolderForAnalysis(this), ds.getInputFolderForAnalysis(this), null, creationCheckPoint);
+            ExecutionContext context =
+                    new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), this, ds, level,
+                            ds.getOutputFolderForAnalysis(this), ds.getInputFolderForAnalysis(this), null, creationCheckPoint);
 
-            executeRun(ec, preventLoggingOnQueryStatus);
-            runs.add(ec);
+            executeRun(context, preventLoggingOnQueryStatus);
+            runs.add(context);
         }
         return runs;
     }
@@ -225,7 +217,7 @@ public class Analysis {
      */
     public List<ExecutionContext> rerun(List<ExecutionContext> contexts, boolean test) {
         long creationCheckPoint = System.nanoTime();
-        LinkedList<ExecutionContext> newRuns = new LinkedList<>();
+        LinkedList<ExecutionContext> newRunContexts = new LinkedList<>();
         for (ExecutionContext oldContext : contexts) {
             DataSet ds = oldContext.getDataSet();
             if (!test && !canStartJobs(ds)) {
@@ -233,16 +225,22 @@ public class Analysis {
                 continue;
             }
 
-            ExecutionContext context = new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), this, oldContext.getDataSet(), test ? ExecutionContextLevel.TESTRERUN : ExecutionContextLevel.RERUN, oldContext.getOutputDirectory(), oldContext.getInputDirectory(), null, creationCheckPoint);
+            ExecutionContext context =
+                    new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), this, oldContext.getDataSet(),
+                            test ? ExecutionContextLevel.TESTRERUN : ExecutionContextLevel.RERUN,
+                            oldContext.getOutputDirectory(), oldContext.getInputDirectory(), null, creationCheckPoint);
 
             context.getAllFilesInRun().addAll(oldContext.getAllFilesInRun());
             executeRun(context);
-            newRuns.add(context);
+            newRunContexts.add(context);
         }
-        return newRuns;
+        return newRunContexts;
     }
 
     private boolean canStartJobs(DataSet ds) {
+        if (Roddy.getFeatureToggleValue(AvailableFeatureToggles.ForbidSubmissionOnRunning)) {
+            throw new RuntimeException("Feature toggle forbidSubmissionOnRunning is currently unsupported due to lack of use by users. If you need it contact the developers.");
+        }
         return !Roddy.getFeatureToggleValue(AvailableFeatureToggles.ForbidSubmissionOnRunning) || !hasKnownRunningJobs(ds);
     }
 
@@ -346,6 +344,41 @@ public class Analysis {
         executeRun(context, false);
     }
 
+
+    protected boolean prepareExecution(ExecutionContext context) {
+        logger.rare("" + context.getExecutionContextLevel());
+        boolean isExecutable;
+        String datasetID = context.getDataSet().getId();
+        Exception eCopy = null;
+        boolean contextRightsSettings = ExecutionService.getInstance().checkAccessRightsSettings(context);
+        boolean contextPermissions = ExecutionService.getInstance().checkContextDirectoriesAndFiles(context);
+        boolean configurationValidity =
+                Roddy.isStrictModeEnabled() && !Roddy.isOptionSet(RoddyStartupOptions.ignoreconfigurationerrors)
+                        ? !getConfiguration().hasErrors()
+                        : true;
+
+        // The setup of the workflow and the executability check may require the execution store, e.g. for synchronously called jobs
+        // to gather data from the remote side.
+        ExecutionService.getInstance().writeFilesForExecution(context);
+
+        boolean setupExecutionStatus = context.getWorkflow().setupExecution();
+        boolean contextExecutability = context.getWorkflow().checkExecutability();
+
+        isExecutable = setupExecutionStatus && contextRightsSettings && contextPermissions && contextExecutability && configurationValidity;
+
+        if (!isExecutable) {
+            StringBuilder message = new StringBuilder("The workflow does not seem to be executable for dataset " + datasetID);
+            if (!contextRightsSettings) message.append("\n\tContext access rights settings could not be validated.");
+            if (!contextPermissions) message.append("\n\tContext permissions could not be validated.");
+            if (!contextExecutability) message.append("\n\tContext and workflow are not considered executable.");
+            if (!configurationValidity) message.append("\n\tContext configuration has errors.");
+            logger.severe(message.toString());
+        }
+
+        return isExecutable;
+    }
+
+
     /**
      * Executes the context object.
      * If the contexts level is QUERY_STATUS:
@@ -360,29 +393,17 @@ public class Analysis {
      */
     protected void executeRun(ExecutionContext context, boolean preventLoggingOnQueryStatus) {
         logger.rare("" + context.getExecutionContextLevel());
-        boolean isExecutable;
         String datasetID = context.getDataSet().getId();
         Exception eCopy = null;
         try {
-            boolean contextRightsSettings = ExecutionService.getInstance().checkAccessRightsSettings(context);
-            boolean contextPermissions = ExecutionService.getInstance().checkContextDirectoriesAndFiles(context);
-            boolean contextExecutability = context.checkExecutability();
-            boolean configurationValidity = Roddy.isStrictModeEnabled() && !Roddy.isOptionSet(RoddyStartupOptions.ignoreconfigurationerrors) ? !getConfiguration().hasErrors() : true;
-            isExecutable = contextRightsSettings && contextPermissions && contextExecutability && configurationValidity;
-            boolean successfullyExecuted = false;
 
-            if (!isExecutable) {
-                StringBuilder message = new StringBuilder("The workflow does not seem to be executable for dataset " + datasetID);
-                if (!contextRightsSettings) message.append("\n\tContext access rights settings could not be validated.");
-                if (!contextPermissions) message.append("\n\tContext permissions could not be validated.");
-                if (!contextExecutability) message.append("\n\tContext and workflow are not considered executable.");
-                if (!configurationValidity) message.append("\n\tContext configuration has errors.");
-                logger.severe(message.toString());
-            } else {
+            boolean isExecutable = prepareExecution(context);
+
+            if (isExecutable) {
+                boolean successfullyExecuted = false;
                 try {
-                    ExecutionService.getInstance().writeFilesForExecution(context);
                     boolean execute = true;
-                    if (context.getExecutionContextLevel().isOrWasAllowedToSubmitJobs) { // Only do these checks, if we are not in query mode!
+                    if (context.getExecutionContextLevel().allowedToSubmitJobs) { // Only do these checks, if we are not in query mode!
                         List<String> invalidPreparedFiles = ExecutionService.getInstance().checkForInaccessiblePreparedFiles(context);
                         boolean copiedAnalysisToolsAreExecutable = ExecutionService.getInstance().checkCopiedAnalysisTools(context);
                         boolean ignoreFileChecks = Roddy.isOptionSet(RoddyStartupOptions.disablestrictfilechecks);
@@ -391,7 +412,7 @@ public class Analysis {
                             StringBuilder message = new StringBuilder("There were errors after preparing the workflow run for dataset " + datasetID);
                             if (invalidPreparedFiles.size() > 0)
                                 message.append("\n\tSome files could not be written. Workflow will not execute.\n\t"
-                                    + String.join("\t\n", invalidPreparedFiles));
+                                        + String.join("\t\n", invalidPreparedFiles));
                             if (!copiedAnalysisToolsAreExecutable)
                                 message.append("\n\tSome declared tools are not executable. Workflow will not execute.");
                             if (ignoreFileChecks) {
@@ -429,7 +450,7 @@ public class Analysis {
             }
         } catch (Exception e) {
             eCopy = e;
-            context.addErrorEntry(ExecutionContextError.EXECUTION_UNCATCHEDERROR.expand(e));
+            context.addErrorEntry(ExecutionContextError.EXECUTION_UNCAUGHTERROR.expand(e));
 
         } finally {
             if (eCopy != null) {
@@ -548,29 +569,50 @@ public class Analysis {
      * @param pidList
      */
     public void cleanup(List<String> pidList) {
-        if (!((AnalysisConfiguration) getConfiguration()).hasCleanupScript() && !getWorkflow().hasCleanupMethod())
+        if (!((AnalysisConfiguration) getConfiguration()).hasCleanupScript() && !ExecutionContext.createAnalysisWorkflowObject(this).hasCleanupMethod())
             logger.postAlwaysInfo("There is neither a configured cleanup script or a native workflow cleanup method available for this analysis.");
+
         List<DataSet> dataSets = getRuntimeService().loadDatasetsWithFilter(this, pidList, true);
         for (DataSet ds : dataSets) {
-            // Call a custom cleanup shell script.
+
+            ExecutionContext context = new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), this,
+                    ds, ExecutionContextLevel.CLEANUP, ds.getOutputFolderForAnalysis(this), ds.getInputFolderForAnalysis(this), null);
+
             if (((AnalysisConfiguration) getConfiguration()).hasCleanupScript()) {
-                //TODO Think hard if this could be generified and simplified! This is also used in other places in a similar way right?
-                ExecutionContext context = new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), this, ds, ExecutionContextLevel.CLEANUP, ds.getOutputFolderForAnalysis(this), ds.getInputFolderForAnalysis(this), null);
-                Job cleanupJob = new Job(context, "cleanup", ((AnalysisConfiguration) getConfiguration()).getCleanupScript(), null);
-//                Command cleanupCmd = Roddy.getJobManager().createCommand(cleanupJob, cleanupJob.getToolPath(), new LinkedList<>());
-                try {
-                    ExecutionService.getInstance().writeFilesForExecution(context);
-                    cleanupJob.run();
-                } catch (Exception ex) {
-                    // Philip: We don't want to see any cleanup errors?
-                } finally {
-                    ExecutionService.getInstance().writeAdditionalFilesAfterExecution(context);
+                String cleanupScript = ((AnalysisConfiguration) getConfiguration()).getCleanupScript();
+                if (cleanupScript != null && cleanupScript != "") {
+                    Job cleanupJob = new Job(context, "cleanupScript", cleanupScript, null);
+//                  Command cleanupCmd = Roddy.getJobManager().createCommand(cleanupJob, cleanupJob.getToolPath(), new LinkedList<>());
+                    try {
+                        ExecutionService.getInstance().writeFilesForExecution(context);
+                        cleanupJob.run();
+                    } finally {
+                        ExecutionService.getInstance().writeAdditionalFilesAfterExecution(context);
+                    }
                 }
             }
 
             // Call the workflows cleanup java method.
-            if (getWorkflow().hasCleanupMethod())
-                getWorkflow().cleanup(ds);
+            if (context.getWorkflow().hasCleanupMethod()) {
+                Workflow wf = context.getWorkflow();
+                boolean isExecutable = prepareExecution(context);
+                if (!isExecutable) {
+                    logger.severe(
+                            new StringBuilder("The workflow does not seem to be executable for dataset " + context.dataSet.getId()).
+                                    append("\n\tSetup for cleanup failed.").
+                                    toString());
+                } else {
+                    try {
+                        boolean successfullyExecuted = wf.cleanup();
+                        if (successfullyExecuted)
+                            finallyStartJobsOfContext(context);
+                    } catch (BEException e) {
+                        context.addErrorEntry(ExecutionContextError.EXECUTION_UNCAUGHTERROR.expand(e));
+                    } finally {
+                        ExecutionService.getInstance().writeAdditionalFilesAfterExecution(context);
+                    }
+                }
+            }
         }
     }
 

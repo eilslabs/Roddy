@@ -15,7 +15,6 @@
     <cvalue name='inputBaseDirectory' value='/data/michael/temp/exampleProject/project' />
     <cvalue name='outputBaseDirectory' value='/data/michael/temp/exampleProject/project' />
     <cvalue name='DEBUG' value='TRUE' />
-    <cvalue name='preventJobExecution' value='false' />
     <cvalue name='UNZIPTOOL' value='gunzip' />
     <cvalue name='UNZIPTOOL_OPTIONS' value='-c' />
     <cvalue name='ZIPTOOL' value='gzip' />

@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2017 eilslabs.
+ * Copyright (c) 2017 German Cancer Research Center (DKFZ).
  *
- * Distributed under the MIT License (license terms are at https://www.github.com/eilslabs/Roddy/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://www.github.com/theroddywms/Roddy/LICENSE.txt).
  */
 
-// Gradle Migration TODOs
-// TODO Document changes to IntelliJ
-// TODO Add travis config
 // TODO Put git short hash into manifests
 // TODO How to compile plugins? Can this be done with gradle as well?
 
@@ -28,7 +25,7 @@ plugins {
     id 'idea'
 }
 
-group = "com.github.eilslabs"
+group = "com.github.dkfz"
 
 /**
  * -PignoreFailedTests                  Continue despite failed tests.
@@ -38,7 +35,7 @@ group = "com.github.eilslabs"
 
 ext.allowDirtyRepo = (project.hasProperty("allowDirty") && project.allowDirty == "true")
 
-apply plugin: "java"
+// apply plugin: "java"
 apply plugin: 'application'
 apply plugin: 'distribution'
 apply plugin: 'groovy'
@@ -91,15 +88,24 @@ repositories {
     maven { url "http://central.maven.org/maven2/" }      // Some of the remaining dependencies
 }
 
+
+
 configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    resolutionStrategy.cacheChangingModulesFor(0, 'seconds')
+    resolutionStrategy.cacheDynamicVersionsFor(0, 'seconds')
+    resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+        if (details.requested.name == "RoddyToolLib") {
+            details.useVersion "1.0.0"
+            details.because 'BatchEuphoria not affected by RoddyToolLib 1.0.0 API changes.'
+        }
+    }
 }
 
 dependencies {
-    compile 'com.github.eilslabs:RoddyToolLib:0.0.3'            // MIT
-    // compile 'com.github.eilslabs:RoddyToolLib:develop-SNAPSHOT'    // MIT
-    compile 'com.github.eilslabs:BatchEuphoria:0.0.1'           // MIT
-    // compile 'com.github.eilslabs:BatchEuphoria:develop-SNAPSHOT'   // MIT
+    compile 'com.github.theroddywms:RoddyToolLib:1.0.0'         // MIT
+    // compile 'com.github.theroddywms:RoddyToolLib:master-SNAPSHOT'    // MIT
+    compile 'com.github.theroddywms:BatchEuphoria:0.0.3'           // MIT
+    // compile 'com.github.theroddywms:BatchEuphoria:master-SNAPSHOT'   // MIT
     compile 'org.codehaus.groovy:groovy-all:2.4.9'              // Apache 2.0
 
     compile 'org.bouncycastle:bcpg-jdk15on:1.51'                // MIT
@@ -152,7 +158,10 @@ sourceSets {
     }
     test {
         groovy {
-            srcDirs = ["${projectDir}/RoddyCore/test"]
+            srcDirs = ["${projectDir}/RoddyCore/test/src"]
+        }
+        resources {
+            srcDirs = ["${projectDir}/RoddyCore/test/resources"]
         }
     }
 }
@@ -243,11 +252,6 @@ idea {
         setJdkName(langLevel)
         languageLevel = langLevel
     }
-}
-
-// Gradle Wrapper
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.2.1'
 }
 
 sphinx {

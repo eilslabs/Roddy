@@ -8,7 +8,6 @@ package de.dkfz.roddy.execution.io.fs
 
 import de.dkfz.roddy.Constants
 import de.dkfz.roddy.Roddy
-import de.dkfz.roddy.config.RoddyAppConfig
 import de.dkfz.roddy.config.converters.ConfigurationConverter
 import de.dkfz.roddy.plugins.LibrariesFactory
 import de.dkfz.roddy.tools.ComplexLine
@@ -175,6 +174,14 @@ public class FileSystemAccessProvider {
             return ExecutionService.getInstance().fileExists(f);
         }
         return runFileTestCommand(commandSet.getFileExistsTestCommand(f));
+    }
+
+    Long fileSize(File f) {
+        def res = ExecutionService.instance.execute(commandSet.getFileSizeCommand(f))
+        if (res.successful)
+            return Long.parseLong(res.firstLine)
+        else
+            return -1
     }
 
     public boolean directoryExists(File f) {
@@ -605,24 +612,20 @@ public class FileSystemAccessProvider {
         }
     }
 
-    public String[] loadTextFile(File file) {
+    String[] loadTextFile(File file) {
         try {
             if (ExecutionService.getInstance().canReadFiles()) { //Let the execution service do this.
-                return ExecutionService.getInstance().loadTextFile(file);
+                return ExecutionService.getInstance().loadTextFile(file)
             }
 
             if (ExecutionService.getInstance().isLocalService()) {
-
-                try {
-                    return file.readLines().toArray(new String[0]);
-                } catch (Exception ex) {
-                    return new String[0];
-                }
+                return file.readLines().toArray(new String[0])
             } else {
-                return ExecutionService.getInstance().execute(commandSet.getReadOutTextFileCommand(file), true).resultLines.toArray(new String[0]);
+                return ExecutionService.getInstance().execute(commandSet.getReadOutTextFileCommand(file), true).resultLines.toArray(new String[0])
             }
         } catch (Exception ex) {
-            logger.postAlwaysInfo("There was an error while trying to load file " + file);
+            logger.postAlwaysInfo("There was an error while trying to load file " + file)
+            return null
         }
     }
 
@@ -669,15 +672,21 @@ public class FileSystemAccessProvider {
     boolean appendLineToFile(boolean atomic, File filename, String line, boolean blocking) {
         try {
             ExecutionService eService = ExecutionService.getInstance()
-            if (eService.canWriteFiles()) {
-                return eService.appendLineToFile(atomic, filename, line, blocking);
-            } else {
-                if (eService.isLocalService())
-                    synchronized (_appendLineToFileLock) {
-                        return RoddyIOHelperMethods.appendLineToFile(filename, line)
-                    }
-                else
-                    throw new RuntimeException("Not implemented yet!");
+            if(atomic) { // Work very safe and use a lockfile
+                // TODO This also needs the lockfile command from the configuration.
+                // TODO As we always used lockfile, we'll do it here as well for now
+                eService.execute(commandSet.getLockedAppendLineToFileCommand(filename, line))
+            } else { // Use possibly faster methods
+                if (eService.canWriteFiles()) {
+                    return eService.appendLineToFile(atomic, filename, line, blocking);
+                } else {
+                    if (eService.isLocalService())
+                        synchronized (_appendLineToFileLock) {
+                            return RoddyIOHelperMethods.appendLineToFile(filename, line)
+                        }
+                    else
+                        throw new RuntimeException("Not implemented yet!");
+                }
             }
         } catch (Exception ex) {
             logger.postAlwaysInfo("There was an error during the attempt to append to file " + filename);

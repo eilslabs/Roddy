@@ -6,23 +6,21 @@
 
 package de.dkfz.roddy.plugins;
 
-import de.dkfz.roddy.StringConstants;
 import de.dkfz.roddy.core.RuntimeService;
 import de.dkfz.roddy.tools.LoggerWrapper;
 import de.dkfz.roddy.tools.RoddyConversionHelperMethods;
-import de.dkfz.roddy.tools.RoddyIOHelperMethods;
 import de.dkfz.roddy.tools.RuntimeTools;
+import de.dkfz.roddy.tools.versions.CompatibilityChecker;
+import de.dkfz.roddy.tools.versions.Version;
+import de.dkfz.roddy.tools.versions.VersionLevel;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 
 /**
@@ -105,22 +103,22 @@ public class PluginInfo {
         toolsBaseDir = getToolsDirectory();
 
         if (toolsBaseDir != null && toolsBaseDir.exists() && toolsBaseDir.isDirectory()) { //Search through the default folders, if possible.
-                for (File file : toolsBaseDir.listFiles()) {
-                    PosixFileAttributes attr;
-                    try {
-                        attr = Files.readAttributes(file.toPath(), PosixFileAttributes.class);
-                    } catch (IOException ex) {
-                        errors.add("An IOException occurred while accessing '" + file.getAbsolutePath() + "': " + ex.getMessage());
-                        continue;
-                    }
-
-                    if (!attr.isDirectory() || file.isHidden()) {
-                        continue;
-                    }
-
-                    String toolsDir = file.getName();
-                    listOfToolDirectories.put(toolsDir, file);
+            for (File file : toolsBaseDir.listFiles()) {
+                PosixFileAttributes attr;
+                try {
+                    attr = Files.readAttributes(file.toPath(), PosixFileAttributes.class);
+                } catch (IOException ex) {
+                    errors.add("An IOException occurred while accessing '" + file.getAbsolutePath() + "': " + ex.getMessage());
+                    continue;
                 }
+
+                if (!attr.isDirectory() || file.isHidden()) {
+                    continue;
+                }
+
+                String toolsDir = file.getName();
+                listOfToolDirectories.put(toolsDir, file);
+            }
         }
     }
 
@@ -146,7 +144,13 @@ public class PluginInfo {
 
     public List<File> getConfigurationFiles() {
         File configPath = getConfigurationDirectory();
-        return Arrays.asList(configPath.listFiles((FileFilter) new WildcardFileFilter(new String[]{"*.sh", "*.xml"})));
+        List<File> configurationFiles = new LinkedList<>();
+        configurationFiles.addAll(Arrays.asList(configPath.listFiles((FileFilter) new WildcardFileFilter(new String[]{"*.sh", "*.xml"}))));
+        if (getBrawlWorkflowDirectory().exists() && getBrawlWorkflowDirectory().canRead()) {
+            File[] files = getBrawlWorkflowDirectory().listFiles((FileFilter) new WildcardFileFilter(new String[]{"*.brawl", "*.groovy"}));
+            configurationFiles.addAll(Arrays.asList(files));
+        }
+        return configurationFiles;
     }
 
     public String getName() {
@@ -221,10 +225,12 @@ public class PluginInfo {
         return prodVersion.split("[-]")[0];
     }
 
+    /** Plugins are compatible to the current Roddy version, if they have the plugin requires the same major version and the same or lower minor level. */
     public boolean isCompatibleToRuntimeSystem() {
-        boolean jdkEquals = jdkVersion.equals(RuntimeTools.getJavaRuntimeVersion());
-        boolean apiEquals = roddyAPIVersion.equals(RuntimeTools.getRoddyRuntimeVersion());
-        return jdkEquals && apiEquals;
+        return CompatibilityChecker.isBackwardsCompatibleTo(
+                Version.fromString(RuntimeTools.getRoddyRuntimeVersion()),
+                Version.fromString(getRoddyAPIVersion()),
+                VersionLevel.MINOR);
     }
 
     public int getRevision() {

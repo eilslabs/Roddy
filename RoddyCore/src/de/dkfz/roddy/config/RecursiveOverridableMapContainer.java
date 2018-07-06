@@ -151,7 +151,7 @@ public class RecursiveOverridableMapContainer<K, V extends RecursiveOverridableM
     /**
      * @param id
      * @param defaultValue
-     * @return the evaluated value for the id, if it exists, otherwise the defauletValue
+     * @return the evaluated value for the id, if it exists, otherwise the defaultValue
      */
     public V getValue(K id, V defaultValue) {
         if (!hasValue(id))

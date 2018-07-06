@@ -26,6 +26,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException
  * <p>
  * Created by heinold on 14.04.16.
  */
+@Deprecated   // See Issue #255.
 @CompileStatic
 final class MetadataTableFactory {
 
@@ -38,7 +39,7 @@ final class MetadataTableFactory {
 
     /**
      * This method constructs the Metadata table valid for the current Roddy execution!
-     * It will lookup implementataion
+     * It will lookup implementation.
      */
     static BaseMetadataTable getTable(Analysis analysis) {
         if (!Roddy.isMetadataCLOptionSet()) {

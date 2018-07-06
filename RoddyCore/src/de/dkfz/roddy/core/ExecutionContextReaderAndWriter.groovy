@@ -124,7 +124,6 @@ class ExecutionContextReaderAndWriter {
     }
 
     private List<Job> readJobsStartedInContext(ExecutionContext context) {
-
         return readJobInfoFile(context) ?: readJobsFromRealJobCallsFile(context)
     }
 
@@ -168,8 +167,10 @@ class ExecutionContextReaderAndWriter {
     @groovy.transform.CompileStatic(TypeCheckingMode.SKIP)
     List<Job> readJobInfoFile(ExecutionContext context) {
         List<Job> jobList = []
-        final File jobInfoFile = context.getRuntimeService().getNameOfJobInfoFile(context)
+        final File jobInfoFile = context.getRuntimeService().getJobInfoFile(context)
         String[] _text = FileSystemAccessProvider.getInstance().loadTextFile(jobInfoFile)
+        if (_text == null)
+            _text = new String[0]
         String text = _text.join(EMPTY)
         if (!text)
             return jobList
@@ -225,7 +226,7 @@ class ExecutionContextReaderAndWriter {
 
     @groovy.transform.CompileStatic(TypeCheckingMode.SKIP)
     String writeJobInfoFile(ExecutionContext context) {
-        final File jobInfoFile = context.getRuntimeService().getNameOfJobInfoFile(context)
+        final File jobInfoFile = context.getRuntimeService().getJobInfoFile(context)
         final List<BEJob> executedJobs = context.getExecutedJobs()
 
         def writer = new StringWriter()
@@ -284,9 +285,9 @@ class ExecutionContextReaderAndWriter {
      */
     List<Job> readJobsFromRealJobCallsFile(ExecutionContext context) {
         FileSystemAccessProvider fip = FileSystemAccessProvider.getInstance()
-        String[] jobCalls = fip.loadTextFile(runtimeService.getNameOfRealCallsFile(context))
+        String[] jobCallFileLines = fip.loadTextFile(runtimeService.getRealCallsFile(context))
         List<Job> jobsStartedInContext = []
-        if (jobCalls == null || jobCalls.size() == 0) {
+        if (jobCallFileLines == null || jobCallFileLines.size() == 0) {
             context.addErrorEntry(ExecutionContextError.READBACK_NOREALJOBCALLSFILE)
         } else {
 
@@ -300,11 +301,10 @@ class ExecutionContextReaderAndWriter {
             }
 
             //TODO Load a list of the previously created jobs and query those using qstat!
-            for (String call : jobCalls) {
-                //TODO. How can we recognize different command factories? i.e. for other cluster systems?
-                GenericJobInfo jobInfo = Roddy.getJobManager().parseGenericJobInfo(call)
+            for (String line : jobCallFileLines) {
+                GenericJobInfo jobInfo = Roddy.getJobManager().parseGenericJobInfo(line)
                 if(jobInfo == null){
-                    logger.severe("Skipped read-in of job call: ${call}")
+                    logger.severe("Skipped read-in of job call: ${line}")
                     continue
                 }
                 // Try to find the tool id in the context. If it is not available, set "UNKNOWN"
@@ -325,7 +325,7 @@ class ExecutionContextReaderAndWriter {
      */
     Map<String, JobState> readInJobStateLogFile(ExecutionContext context) {
         FileSystemAccessProvider fip = FileSystemAccessProvider.getInstance()
-        File jobStatesLogFile = context.getRuntimeService().getNameOfJobStateLogFile(context)
+        File jobStatesLogFile = context.getRuntimeService().getJobStateLogFile(context)
         String[] jobStateList = fip.loadTextFile(jobStatesLogFile)
 
         if (jobStateList == null || jobStateList.size() == 0) {

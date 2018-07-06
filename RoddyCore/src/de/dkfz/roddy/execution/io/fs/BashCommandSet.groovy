@@ -122,10 +122,12 @@ public class BashCommandSet extends ShellCommandSet {
 
     @Override
     String getCheckAndCreateDirectoryCommand(File f, String onCreateAccessRights, String onCreateFileGroup) {
+        String path = f.absolutePath
+        String checkExistence = "[[ ! -e ${path} ]]"
         if (onCreateAccessRights && onCreateFileGroup)
-            return "sg ${onCreateFileGroup} -c \"umask ${onCreateAccessRights} && mkdir -p ${f.absolutePath}\"";
+            return "sg ${onCreateFileGroup} -c \"${checkExistence} && umask ${onCreateAccessRights} && mkdir -p ${path}\"";
         else
-            return "install -d ${f.absolutePath}";
+            return "${checkExistence} && install -d \"${path}\" || echo ''";
     }
 
     @Override
@@ -254,6 +256,11 @@ public class BashCommandSet extends ShellCommandSet {
     String getMoveFileCommand(File _in, File _out) { return "mv ${_in.getAbsolutePath()} ${_out.getAbsolutePath()}"; }
 
     @Override
+    String getLockedAppendLineToFileCommand(File file, String line) {
+        return "lockfile ${file}~; echo \"${line}\" >> ${file}; rm -rf ${file}~"
+    }
+
+    @Override
     String getDefaultUMask() {
         return "007";
     }
@@ -302,5 +309,10 @@ public class BashCommandSet extends ShellCommandSet {
     boolean validate() {
         def file = new File("/bin/bash")
         return file.exists() && file.canExecute();
+    }
+
+    @Override
+    String getFileSizeCommand(File file) {
+        return "stat --printf='%s' '${file}'"
     }
 }

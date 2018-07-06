@@ -29,6 +29,6 @@
         <xs:attribute type="xs:string" name="targetJobManager" use="optional"/>
         <xs:attribute type="xs:string" name="brawlWorkflow" use="optional"/>
         <xs:attribute type="xs:string" name="brawlBaseWorkflow" use="optional"/>
-        <xs:attribute type="xs:string" name="runtimeServiceClass" use="required"/>
+        <xs:attribute type="xs:string" name="runtimeServiceClass" use="optional"/>
     </xs:complexType>
 </xs:schema>

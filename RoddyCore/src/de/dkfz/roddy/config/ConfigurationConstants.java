@@ -10,19 +10,37 @@ public class ConfigurationConstants {
     public static final String CFG_INPUT_BASE_DIRECTORY = "inputBaseDirectory";
     public static final String CFG_OUTPUT_BASE_DIRECTORY = "outputBaseDirectory";
     public static final String CFG_OUTPUT_ANALYSIS_BASE_DIRECTORY = "outputAnalysisBaseDirectory";
+    public static final String CFG_INPUT_ANALYSIS_BASE_DIRECTORY = "inputAnalysisBaseDirectory";
     public static final String RODDY_EXEC_DIR_PREFIX = "exec_";
     public static final String RODDY_EXEC_CACHE_FILE = ".roddyExecCache.txt";
     public static final String RODDY_JOBSTATE_LOGFILE = "jobStateLogfile.txt";
 
 
+    // Turn off debugging of wrapped script. This is mainly used for direct job execution during submission time.
     public static final String DISABLE_DEBUG_OPTIONS_FOR_TOOLSCRIPT = "disableDebugOptionsForToolscript";
+
+    // set -o pipefail
     public static final String DEBUG_OPTIONS_USE_PIPEFAIL = "debugOptionsUsePipefail";
+
+    // set -o verbose; set -v
     public static final String DEBUG_OPTIONS_USE_VERBOSE_OUTPUT = "debugOptionsUseVerboseOutput";
+
+    // set -o errtrace; set -x
     public static final String DEBUG_OPTIONS_USE_EXECUTE_OUTPUT = "debugOptionsUseExecuteOutput";
+
+    // This additionally puts debug information in the front of each line.
     public static final String DEBUG_OPTIONS_USE_EXTENDED_EXECUTE_OUTPUT = "debugOptionsUseExtendedExecuteOutput";
+
+    // set -o nounset; set -u
     public static final String DEBUG_OPTIONS_USE_UNDEFINED_VARIABLE_BREAK = "debugOptionsUseUndefinedVariableBreak";
+
+    // set -o errexit; set -e
     public static final String DEBUG_OPTIONS_USE_EXIT_ON_ERROR = "debugOptionsUseExitOnError";
+
+    // set -o noexec; set -n; do not execute anything (dry-run); for syntax checking
     public static final String DEBUG_OPTIONS_PARSE_SCRIPTS = "debugOptionsParseScripts";
+
+    // Toggle on/off debugging of the wrap in script itself.
     public static final String DEBUG_WRAP_IN_SCRIPT = "debugWrapInScript";
 
     public static final String CVALUE_PLACEHOLDER_EXECUTION_DIRECTORY = "$PWD";
@@ -52,7 +70,6 @@ public class ConfigurationConstants {
     public static final String CFG_OUTPUT_ACCESS_RIGHTS = "outputAccessRights";
     public static final String CFG_OUTPUT_FILE_GROUP = "outputFileGroup";
 
-    public static final String CFG_PREVENT_JOB_EXECUTION = "preventJobExecution";
     public static final String CFG_OUTPUT_UMASK = "outputUMask";
 
     public static final String CFG_USED_RESOURCES_SIZE = "usedResourcesSize";

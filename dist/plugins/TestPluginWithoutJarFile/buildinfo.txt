@@ -1,4 +1,3 @@
-dependson=TestPluginWithJarFile:develop
 dependson=PluginBase:develop
 JDKVersion=1.8
 GroovyVersion=2.4

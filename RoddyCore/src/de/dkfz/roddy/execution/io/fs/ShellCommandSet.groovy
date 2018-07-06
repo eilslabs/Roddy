@@ -11,97 +11,102 @@ import de.dkfz.roddy.config.converters.ConfigurationConverter
 /**
  */
 @groovy.transform.CompileStatic
-public abstract class ShellCommandSet {
+abstract class ShellCommandSet {
 
-    public abstract String getFileExistsTestCommand(File f)
+    abstract String getFileExistsTestCommand(File f)
 
-    public abstract String getDirectoryExistsTestCommand(File f)
+    abstract String getDirectoryExistsTestCommand(File f)
 
-    public abstract String getReadabilityTestCommand(File f);
+    abstract String getReadabilityTestCommand(File f)
 
-    public abstract String getWriteabilityTestCommand(File f);
+    abstract String getWriteabilityTestCommand(File f)
 
-    public abstract String getExecutabilityTestCommand(File f)
+    abstract String getExecutabilityTestCommand(File f)
 
-    public abstract String getReadabilityTestPositiveResult();
+    abstract String getReadabilityTestPositiveResult()
 
-    public abstract String getUserDirectoryCommand();
+    abstract String getUserDirectoryCommand()
 
-    public abstract String getWhoAmICommand();
+    abstract String getWhoAmICommand()
 
     abstract String getListOfGroupsCommand()
 
-    public abstract String getMyGroupCommand();
+    abstract String getMyGroupCommand()
 
-    public abstract String getGetUsermaskCommand();
+    abstract String getGetUsermaskCommand()
 
-    public abstract String getGroupIDCommand(String groupID);
+    abstract String getGroupIDCommand(String groupID)
 
-    public abstract String getOwnerOfPathCommand(File f);
+    abstract String getOwnerOfPathCommand(File f)
 
-    public abstract String getCheckForInteractiveConsoleCommand();
+    abstract String getCheckForInteractiveConsoleCommand()
 
-    public abstract String getSetPathCommand();
+    abstract String getSetPathCommand()
 
-    public abstract String getCheckDirectoryCommand(File f);
+    abstract String getCheckDirectoryCommand(File f)
 
-    public abstract String getCheckDirectoryCommand(File file, boolean createMissing, String onCreateAccessRights, String onCreateFileGroup);
+    abstract String getCheckDirectoryCommand(File file, boolean createMissing, String onCreateAccessRights, String onCreateFileGroup)
 
-    public abstract String getCheckAndCreateDirectoryCommand(File f, String onCreateAccessRights, String onCreateFileGroup)
+    abstract String getCheckAndCreateDirectoryCommand(File f, String onCreateAccessRights, String onCreateFileGroup)
 
-    public abstract String getCheckChangeOfPermissionsPossibilityCommand(File f, String group)
+    abstract String getCheckChangeOfPermissionsPossibilityCommand(File f, String group)
 
-    public abstract String getSetAccessRightsCommand(File f, String rightsForFiles, String fileGroup);
+    abstract String getSetAccessRightsCommand(File f, String rightsForFiles, String fileGroup)
 
-    public abstract String getSetAccessRightsRecursivelyCommand(File f, String rightsForDirectories, String rightsForFiles, String fileGroup);
+    abstract String getSetAccessRightsRecursivelyCommand(File f, String rightsForDirectories, String rightsForFiles, String fileGroup)
 
-    public abstract String getCheckCreateAndReadoutExecCacheFileCommand(File f);
+    abstract String getCheckCreateAndReadoutExecCacheFileCommand(File f)
 
-    public abstract String getReadOutTextFileCommand(File f);
+    abstract String getReadOutTextFileCommand(File f)
 
-    public abstract String getReadLineOfFileCommand(File file, int lineIndex);
+    abstract String getReadLineOfFileCommand(File file, int lineIndex)
 
-    public abstract String getListDirectoriesInDirectoryCommand(File file);
+    abstract String getListDirectoriesInDirectoryCommand(File file)
 
-    public abstract String getListDirectoriesInDirectoryCommand(File file, List<String> filters);
+    abstract String getListDirectoriesInDirectoryCommand(File file, List<String> filters)
 
-    public abstract String getListFilesInDirectoryCommand(File file);
+    abstract String getListFilesInDirectoryCommand(File file)
 
-    public abstract String getListFilesInDirectoryCommand(File file, List<String> filters);
+    abstract String getListFilesInDirectoryCommand(File file, List<String> filters)
 
-    public abstract String getListFullDirectoryContentRecursivelyCommand(File f, int depth, boolean onlyDirectories);
+    abstract String getListFullDirectoryContentRecursivelyCommand(File f, int depth, boolean onlyDirectories)
 
-    public abstract String getListFullDirectoryContentRecursivelyCommand(List<File> directories, List<Integer> depth, boolean onlyDirectories);
+    abstract String getListFullDirectoryContentRecursivelyCommand(List<File> directories, List<Integer> depth, boolean onlyDirectories)
 
-    public abstract FileSystemInfoObject parseDetailedDirectoryEntry(String line);
+    abstract FileSystemInfoObject parseDetailedDirectoryEntry(String line)
 
-    public abstract String getPathSeparator();
+    abstract String getPathSeparator()
 
-    public abstract String getNewLineString();
+    abstract String getNewLineString()
 
-    public abstract String getCopyFileCommand(File _in, File _out);
+    abstract String getCopyFileCommand(File _in, File _out)
 
-    public abstract String getCopyDirectoryCommand(File _in, File _out);
+    abstract String getCopyDirectoryCommand(File _in, File _out)
 
-    public abstract String getMoveFileCommand(File _from, File _to);
+    abstract String getMoveFileCommand(File _from, File _to)
 
-    public abstract String getDefaultUMask()
+    abstract String getLockedAppendLineToFileCommand(File file, String line)
 
-    public abstract String getDefaultAccessRightsString()
+    abstract String getDefaultUMask()
 
-    public abstract String getRemoveDirectoryCommand(File file);
+    abstract String getDefaultAccessRightsString()
 
-    public abstract String getRemoveFileCommand(File file);
+    abstract String getRemoveDirectoryCommand(File file)
 
-    public abstract ConfigurationConverter getConfigurationConverter();
+    abstract String getRemoveFileCommand(File file)
 
-    public abstract String getExecuteScriptCommand(File file);
+    abstract ConfigurationConverter getConfigurationConverter()
 
-    public abstract String singleQuote(String text);
+    abstract String getExecuteScriptCommand(File file)
 
-    public abstract String doubleQuote(String text);
+    abstract String singleQuote(String text)
 
-    public abstract List<String> getShellExecuteCommand(String... commands);
+    abstract String doubleQuote(String text)
 
-    public abstract boolean validate();
+    abstract List<String> getShellExecuteCommand(String... commands)
+
+    abstract boolean validate()
+
+    abstract String getFileSizeCommand(File file)
+
 }

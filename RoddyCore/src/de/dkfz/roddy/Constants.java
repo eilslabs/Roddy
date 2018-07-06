@@ -16,8 +16,8 @@ public class Constants {
     // Application constants
     /////////////////////////
 
-    public static final String APP_CURRENT_VERSION_STRING = "3.0.3";
-    public static final String APP_CURRENT_VERSION_BUILD_DATE = "Mon Feb 12 17:34:44 CET 2018";
+    public static final String APP_CURRENT_VERSION_STRING = "3.1.0";
+    public static final String APP_CURRENT_VERSION_BUILD_DATE = "Wed Jun 06 15:28:15 CEST 2018";
     public static final String APP_PROPERTY_JOB_MANAGER_CLASS = "jobManagerClass";
     public static final String APP_PROPERTY_FILESYSTEM_ACCESS_MANAGER_CLASS = "fileSystemAccessManagerClass";
     public static final String APP_PROPERTY_EXECUTION_SERVICE_CLASS = "executionServiceClass";
@@ -33,7 +33,6 @@ public class Constants {
     public static final String APP_PROPERTY_EXECUTION_SERVICE_AUTH_METHOD_KEYFILE_LOCATION = "executionServiceKeyfileLocation";
     public static final String APP_PROPERTY_CONFIGURATION_DIRECTORIES = "configurationDirectories";
     public static final String APP_PROPERTY_PLUGIN_DIRECTORIES = "pluginDirectories";
-    public static final String APP_PROPERTY_APPLICATION_DEBUG_TAGS = "applicationDebugTags";
     public static final String APP_PROPERTIES_FILENAME = "applicationProperties.ini";
     public static final String APP_PROPERTY_APPLICATION_DEBUG_TAG_NOJOBSUBMISSION = "NOJOBSUBMISSION";
     public static final String APP_PROPERTY_NET_USEPROXY = "netUseProxy";
@@ -41,6 +40,7 @@ public class Constants {
     public static final String APP_PROPERTY_NET_PROXY_USR = "netProxyUser";
     public static final String APP_PROPERTY_SCRATCH_BASE_DIRECTORY = "scratchBaseDirectory";
     public static final String APP_PROPERTY_JOB_MANAGER_PASS_ENVIRONMENT = "jobManagerPassEnvironment";
+    public static final String APP_PROPERTY_JOB_MANAGER_HOLDJOBS_ON_SUBMISSION = "jobManagerHoldJobsOnSubmission";
     public static final String APP_PROPERTY_BASE_ENVIRONMENT_SCRIPT = "baseEnvironmentScript";
 
     /////////////////////////
@@ -79,6 +79,9 @@ public class Constants {
     public static final String PARAMETER_FILE = "PARAMETER_FILE";
     public static final String ANALYSIS_DIR = "ANALYSIS_DIR";
     public static final String PARAMETER_FILE_SUFFIX = ".parameters";
+    public static final String PROJECT_NAME = "projectName";
+    public static final String DATASET = "dataSet";
+    public static final String DATASET_CAP = "DATASET";
     public static final String PID_CAP = "PID";
     public static final String PID = "pid";
 

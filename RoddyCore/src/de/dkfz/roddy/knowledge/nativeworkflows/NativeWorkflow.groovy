@@ -139,6 +139,8 @@ class NativeWorkflow extends Workflow {
         ContextConfiguration configuration = (ContextConfiguration) context.getConfiguration()
 //Get the calls file in the temp directory.
         String[] calls = FileSystemAccessProvider.getInstance().loadTextFile(new File(context.getTemporaryDirectory(), "calls"))
+        if (calls == null)
+            calls = new String[0]
         Map<String, BEGenJI> callsByID = new LinkedHashMap<>()
 
         def inlineScriptsDir = RoddyIOHelperMethods.assembleLocalPath(context.executionDirectory, "analysisTools", "inlineScripts")

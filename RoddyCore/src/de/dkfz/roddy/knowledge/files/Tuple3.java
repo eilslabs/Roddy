@@ -13,8 +13,12 @@ package de.dkfz.roddy.knowledge.files;
  * Maybe a generic Tuple[n] class would be the best way. But then this
  * class would have n accessors.
  */
-public class Tuple3<X extends FileObject, Y extends FileObject, Z extends FileObject> extends Tuple2<X,Y> {
-    public Z value2;
+public class Tuple3<
+        X extends FileObject,
+        Y extends FileObject,
+        Z extends FileObject>
+        extends Tuple2<X,Y> {
+    public final Z value2;
 
     public Tuple3(X value0, Y value1, Z value2) {
         super(value0, value1);

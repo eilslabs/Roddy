@@ -52,7 +52,7 @@ elif [[ "$parm1" == "install" ]]; then
 elif [[ "$parm1" == "compileplugin" ]]; then
     echo "Using Roddy binary "`basename ${RODDY_BINARY}`
     echo "  Roddy version: "$(basename $(dirname ${RODDY_BINARY}))
-    [[ ! -f ${RODDY_BINARY} ]] && echo "The requested Roddy version does not exist or was not build. Please check Roddy version or run './roddy.sh compile'." && exit 1
+    [[ ! -f ${RODDY_BINARY} ]] && echo "The requested Roddy version does not exist or was not built. Please check Roddy version or run './roddy.sh compile'." && exit 1
     [[ ! -d $JDK_HOME ]] && echo "There was no JDK home found. Roddy cannot compile workflows." && exit 1
     source ${SCRIPTS_DIR}/compileRoddyPlugin.sh
     exit 0

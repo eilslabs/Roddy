@@ -38,6 +38,14 @@
             <input type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_IN"/>
             <output type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_OUT" filename="${testOutputDirectory}/test_onScript_1.txt" />
         </tool>
+        <tool name='testScriptMultiInMixedParameters' value='testScriptSleep.sh' basepath='roddyTests'>
+            <input type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_IN"/>
+            <input type="string" scriptparameter="STRING_IN"/>
+            <input type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_IN2"/>
+            <input type="string" scriptparameter="STRING_IN2"/>
+            <input type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_IN3"/>
+            <output type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_OUT" filename="${testOutputDirectory}/test_onScript_4.txt" />
+        </tool>
         <tool name='testScriptExitBad' value='testScriptSleepExitBad.sh' basepath='roddyTests'>
             <input type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_IN"/>
             <output type="file" typeof="SimpleTestTextFile" scriptparameter="FILENAME_OUT"/>

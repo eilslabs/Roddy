@@ -9,8 +9,11 @@ package de.dkfz.roddy.knowledge.files;
 import de.dkfz.roddy.config.ConfigurationError;
 import de.dkfz.roddy.core.ExecutionContext;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 /**
  * Filegroups group multiple files into one group. I.e. BamFiles can be grouped
@@ -18,7 +21,7 @@ import java.util.List;
  *
  * @author michael
  */
-public abstract class FileGroup<F extends BaseFile> extends FileObject {
+public abstract class FileGroup<F extends BaseFile> extends FileObject implements Iterable<F> {
 
     // In some cases a group has another group as a parent.
     protected FileGroup parentGroup;
@@ -30,6 +33,16 @@ public abstract class FileGroup<F extends BaseFile> extends FileObject {
         if (files != null) {
             addFiles(files);
         }
+    }
+
+    @Override
+    public Iterator<F> iterator() {
+        return filesInGroup.iterator();
+    }
+
+    @Override
+    public void forEach(Consumer<? super F> action) {
+        filesInGroup.forEach(action);
     }
 
     /**
@@ -49,6 +62,24 @@ public abstract class FileGroup<F extends BaseFile> extends FileObject {
         } else {
             throw new RuntimeException("Cannot call getExecutionContext if FileGroup has no files in it.");
         }
+    }
+
+    public final void add(F file) {
+        addFile(file);
+    }
+
+    public final void leftShift(F file) {
+        addFile(file);
+    }
+
+    public final FileGroup<F> plus(F file) {
+        addFile(file);
+        return this;
+    }
+
+    public final FileGroup<F> plus(FileGroup<F> filegroup) {
+        addFiles(filegroup.filesInGroup);
+        return this;
     }
 
     public final void addFile(F file) {

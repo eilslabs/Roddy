@@ -286,16 +286,6 @@ public class AnalysisConfigurationProxy extends AnalysisConfiguration {
     }
 
     @Override
-    public boolean getPreventJobExecution() {
-        return checkAnalysisConfig().getPreventJobExecution();
-    }
-
-    @Override
-    public void disableJobExecution() {
-        super.disableJobExecution();
-    }
-
-    @Override
     public String getSSHExecutionUser() {
         return checkAnalysisConfig().getSSHExecutionUser();
     }

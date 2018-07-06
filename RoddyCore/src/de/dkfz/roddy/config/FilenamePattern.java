@@ -223,7 +223,7 @@ public abstract class FilenamePattern implements RecursiveOverridableMapContaine
             valueChanged = !oldValue.equals(src);
         }
 
-        /** Try and resolve the leftofer ${someKindOfValue}, stop, when nothing changed. **/
+        /** Try and resolve the leftover ${someKindOfValue}, stop, when nothing changed. **/
         boolean somethingChanged = true;
         Map<String, String> blacklist = new LinkedHashMap<>();
         int blacklistID = 1000;

@@ -25,7 +25,7 @@ class SimpleRuntimeService extends RuntimeService {
         Map<String, Object> parameters = new LinkedHashMap<>()
         parameters.put("pid", (Object) pid)
         parameters.put("PID", (Object) pid)
-        parameters.put("PARAMETER_FILE", getNameOfConfigurationFile(context).getAbsolutePath())
+        parameters.put("PARAMETER_FILE", getConfigurationFile(context).getAbsolutePath())
         parameters.put("ANALYSIS_DIR", context.getOutputDirectory().getParentFile().getParent())
         if (toolID != null && toolID.length() > 0) {
             parameters.put("PRM_TOOLS_DIR", cfg.getProcessingToolPath(context, toolID).getParent())
@@ -95,7 +95,7 @@ class SimpleRuntimeService extends RuntimeService {
     }
 
     SimpleTestTextFile createInitialTextFile(ExecutionContext ec) {
-        SimpleTestTextFile tf = new SimpleTestTextFile(new ConstructionHelperForSourceFiles(new File(getOutputFolderForDataSetAndAnalysis(ec.getDataSet(), ec.getAnalysis()).getAbsolutePath(), "textBase.txt"), ec, new SimpleFileStageSettings(ec.getDataSet(), "100", "R001"), null))
+        SimpleTestTextFile tf = new SimpleTestTextFile(new ConstructionHelperForSourceFiles(new File(getOutputAnalysisBaseDirectory(ec.getDataSet(), ec.getAnalysis()).getAbsolutePath(), "textBase.txt"), ec, new SimpleFileStageSettings(ec.getDataSet(), "100", "R001"), null))
         if (!FileSystemAccessProvider.getInstance().checkFile(tf.getPath()))
             FileSystemAccessProvider.getInstance().createFileWithDefaultAccessRights(true, tf.getPath(), ec, true)
         return tf

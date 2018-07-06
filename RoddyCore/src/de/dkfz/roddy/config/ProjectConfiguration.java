@@ -12,8 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A project configuration extends the standard configuration by adding project specific
- * fields and methods.
+ * A project configuration extends the standard configuration by adding project specific fields and methods.
  * Each project and subproject has its own set of analyses as those are not  inherited from a parent project.
  */
 public class ProjectConfiguration extends Configuration {
@@ -91,7 +90,7 @@ public class ProjectConfiguration extends Configuration {
     }
 
     /**
-     * A runtime service can be derived from a parent configuration instance.
+     * A runtime service can be derived from a parent configuration instance. Return the first runtime service class name found among the parents.
      *
      * @return
      */

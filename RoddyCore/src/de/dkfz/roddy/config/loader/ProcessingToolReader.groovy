@@ -161,13 +161,6 @@ class ProcessingToolReader {
                 if (noOfOutputParameters != outputParameters.size())
                     addLoadErr("The number of read output parameters does not match to the output parameters in the configuration.", null)
 
-                if ((inputParameters && !outputParameters) || (!inputParameters && outputParameters)) {
-                    if (!inputParameters)
-                        addLoadErr("Output parameters are set but input parameters are not. You need to set both or none.", null)
-                    if (!outputParameters)
-                        addLoadErr("Input parameters are set but output parameters are not. You need to set both or none.", null)
-                }
-
                 def allparameters = (inputParameters + outputParameters).collect {
                     if (!it) // Error is already catched in parseToolParameter, just skip it here.
                         return
@@ -248,6 +241,7 @@ class ProcessingToolReader {
             return parseFileGroup(child, toolID)
         } else if (type == "string") {
             ToolStringParameter.ParameterSetbyOptions setby = Enum.valueOf(ToolStringParameter.ParameterSetbyOptions.class, extractAttributeText(child, "setby", ToolStringParameter.ParameterSetbyOptions.callingCode.name()))
+
             String pName = readAttribute(child, "scriptparameter")
             ToolStringParameter tsp
             if (setby == ToolStringParameter.ParameterSetbyOptions.callingCode) {
@@ -255,6 +249,7 @@ class ProcessingToolReader {
             } else {
                 tsp = new ToolStringParameter(pName, extractAttributeText(child, "cValueID"))
             }
+
             return tsp
         } else {
             addLoadErr("The type attribute of a parameter was invalid (${type}) for tool ${toolID}\n" + ConfigurationFactory.ERROR_PRINTOUT_XML_LINEPREFIX + RoddyConversionHelperMethods.toFormattedXML(child, "\n" + ConfigurationFactory.ERROR_PRINTOUT_XML_LINEPREFIX))

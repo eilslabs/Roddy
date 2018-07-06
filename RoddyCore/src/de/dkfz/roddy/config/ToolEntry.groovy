@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.config
 
+import de.dkfz.roddy.config.ToolEntry.ToolParameter
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.knowledge.files.BaseFile
 import groovy.transform.CompileStatic
@@ -66,15 +67,15 @@ class ToolEntry implements RecursiveOverridableMapContainer.Identifiable {
         }
     }
 
-    public static abstract class ToolParameter<T extends ToolParameter> {
+    static abstract class ToolParameter<T extends ToolParameter> {
         public final String scriptParameterName;
 
-        public ToolParameter(String scriptParameterName) {
+        ToolParameter(String scriptParameterName) {
             this.scriptParameterName = scriptParameterName;
         }
 
         @Override
-        public boolean equals(Object o) {
+        boolean equals(Object o) {
             // Is backed by test!
             if (this.is(o)) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -85,27 +86,27 @@ class ToolEntry implements RecursiveOverridableMapContainer.Identifiable {
         }
 
         @Override
-        public int hashCode() {
+        int hashCode() {
             return scriptParameterName != null ? scriptParameterName.hashCode() : 0;
         }
 
-        public abstract T clone();
+        abstract T clone();
     }
 
-    public static abstract class ToolParameterOfFiles extends ToolParameter<ToolParameterOfFiles> {
+    static abstract class ToolParameterOfFiles extends ToolParameter<ToolParameterOfFiles> {
         ToolParameterOfFiles(String scriptParameterName) {
             super(scriptParameterName);
         }
 
-        public abstract boolean hasSelectionTag();
+        abstract boolean hasSelectionTag();
         /**
          * The childFiles methods only return the possibly empty set of children. The files methods
          * return all children and possibly (for everything but pure aggregate parameters) the file
          * itself and all its children. The getAllChildFiles returns all children recursively.
          */
-        public abstract List<? extends ToolParameterOfFiles> getAllFiles();
+        abstract List<? extends ToolParameterOfFiles> getAllFiles();
 
-        public abstract List<? extends ToolParameterOfFiles> getFiles();
+        abstract List<? extends ToolParameterOfFiles> getFiles();
     }
 
     public final String id;
@@ -290,7 +291,7 @@ class ToolEntry implements RecursiveOverridableMapContainer.Identifiable {
     }
 
     @Override
-    public String toString() {
+    String toString() {
         return "ToolEntry " + id;
     }
 }

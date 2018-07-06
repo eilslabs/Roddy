@@ -97,12 +97,12 @@ Generic configuration files keep a minimal header, which might even just contain
 Configuration values
 --------------------
 
-Configuration values are the thing you might change most of the times. When Roddy executes a workflow, a shell script will be created where all the configuration values are stored. This script can then be imported by workflow scripts.
-Please take a look at :doc:`runtimeConfigurationFiles`.
+Usually you will change configuration values. When Roddy executes a workflow, a shell script will be created where all the configuration values are stored. This script can then be imported by workflow scripts.
 
 Configuration values are embedded in a configuration values section like:
 
 .. code-block:: XML
+
     <configurationvalues>
         <cvalue name='analysisMethodNameOnInput' value='testAnalysis' type='string'/>
         <cvalue name='analysisMethodNameOnOutput' value='testAnalysis' type='string'/>

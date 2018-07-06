@@ -7,15 +7,23 @@
 // Update build version and date in Constants.java
 
 if(args.length < 2) {
-	println "Please call this script: groovy IncreaseAndSetBuildVersion [version info file] [constants file]"
+	println "Please call this script: groovy IncreaseAndSetBuildVersion [version info file] [constants file] [increase build version (true, false)]"
 	System.exit(1);
 }
 
 def vFile = new File(args[0])
 def srcFile = new File(args[1]);
+Boolean doIncrease = false
+if (args.size() > 2) {
+     doIncrease = Boolean.parseBoolean(args[2])
+}
+
 def lines = vFile.readLines()
-def major = lines[0];
-def minor = lines[1].toInteger() + 1;
+def major = lines[0]
+def minor = lines[1].toInteger()
+if (doIncrease)
+    minor = lines[1].toInteger() + 1
+
 vFile.withWriter {
     out ->
         out.writeLine("" + major);

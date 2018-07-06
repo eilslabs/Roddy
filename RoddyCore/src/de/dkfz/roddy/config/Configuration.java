@@ -18,6 +18,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.util.*;
 
 import static de.dkfz.roddy.StringConstants.SPLIT_COMMA;
@@ -36,7 +37,6 @@ import static de.dkfz.roddy.StringConstants.SPLIT_COMMA;
  * @author michael
  */
 public class Configuration implements ContainerParent<Configuration> {
-
 
 
     /**
@@ -123,10 +123,10 @@ public class Configuration implements ContainerParent<Configuration> {
 
     /**
      * @param preloadedConfiguration
-     * @param parentConfigurations A list of parent configuration objects.
-     *                             Order matters! Configurations are stored with
-     *                             increasing priority, so pcs[0] has the lowest
-     *                             and pcs[n -1] has the highest priority
+     * @param parentConfigurations   A list of parent configuration objects.
+     *                               Order matters! Configurations are stored with
+     *                               increasing priority, so pcs[0] has the lowest
+     *                               and pcs[n -1] has the highest priority
      */
     public Configuration(PreloadedConfiguration preloadedConfiguration, List<Configuration> parentConfigurations) {
         this.preloadedConfiguration = preloadedConfiguration;
@@ -213,7 +213,7 @@ public class Configuration implements ContainerParent<Configuration> {
     }
 
     public ResourceSetSize getResourcesSize() {
-        if(configurationValues.hasValue(ConfigurationConstants.CFG_USED_RESOURCES_SIZE)) {
+        if (configurationValues.hasValue(ConfigurationConstants.CFG_USED_RESOURCES_SIZE)) {
             try {
                 return ResourceSetSize.valueOf(configurationValues.getValue(ConfigurationConstants.CFG_USED_RESOURCES_SIZE).toString());
             } catch (ConfigurationError e) {
@@ -279,6 +279,7 @@ public class Configuration implements ContainerParent<Configuration> {
 
     /**
      * Clears the list of parent configuration objects and sets c as the single parent.
+     *
      * @param c
      */
     public void setParent(Configuration c) {
@@ -289,6 +290,7 @@ public class Configuration implements ContainerParent<Configuration> {
     /**
      * Add a parent to the parents list. Note, that the added configuration has a higher priority
      * than the ones already in the list.
+     *
      * @param p
      */
     public void addParent(Configuration p) {
@@ -305,17 +307,34 @@ public class Configuration implements ContainerParent<Configuration> {
         return new LinkedList<Configuration>(subConfigurations.values());
     }
 
-    public File getSourceBrawlWorkflow(String brawlName) {
+    public File getBrawlWorkflowSourceFile(String brawlName) {
+        // Brawl workflows can have the ending .brawl OR .groovy (better for e.g. Idea)
+        File wf = getBrawlWorkflowFile(brawlName, Arrays.asList(".brawl", ".groovy"));
+        return wf;
+    }
+
+    public File getJBrawlWorkflowSourceFile(String brawlName) {
+        return getBrawlWorkflowFile(brawlName, Arrays.asList(".jbrawl"));
+    }
+
+    private File getBrawlWorkflowFile(String brawlName, List<String> suffix) {
         List<PluginInfo> pluginInfos = LibrariesFactory.getInstance().getLoadedPlugins();
         Map<String, File> availableBasePaths = new LinkedHashMap<>();
         List<File> allFiles = new LinkedList<>();
+        List<String> filenames = new LinkedList<>();
+        for (String s : suffix)
+            filenames.add(brawlName + s);
+        FileFilter filter = (FileFilter) new WildcardFileFilter(filenames);
         for (PluginInfo pluginInfo : pluginInfos) {
-            File[] files = pluginInfo.getBrawlWorkflowDirectory().listFiles((FileFilter) new WildcardFileFilter(brawlName + ".brawl"));
-            if(files != null && files.length > 0)
-            allFiles.addAll(Arrays.asList(files));
+            File[] files = pluginInfo.getBrawlWorkflowDirectory().listFiles(filter);
+            if (files != null && files.length > 0)
+                allFiles.addAll(Arrays.asList(files));
         }
-        if(allFiles.size() == 1) return allFiles.get(0);
-        logger.severe("Too many braw workflows called " + brawlName);
+        if (allFiles.size() == 1) return allFiles.get(0);
+        else if (allFiles.size() == 0)
+            logger.severe("No Brawl workflow '" + brawlName + "' could be found");
+        else if (allFiles.size() > 1)
+            logger.severe("Too many Brawl workflows called " + brawlName);
         return null;
     }
 
@@ -343,6 +362,7 @@ public class Configuration implements ContainerParent<Configuration> {
         return toolPath;
     }
 
+    /** The actual path to the copy of the tool on the execution host (which can be local or remote). */
     public File getProcessingToolPath(ExecutionContext context, String tool) throws ConfigurationError {
         ToolEntry te = null;
         try {
@@ -361,14 +381,6 @@ public class Configuration implements ContainerParent<Configuration> {
         }
         File sourceToolPath = getSourceToolPath(tool);
         return RoddyIOHelperMethods.getMD5OfFile(sourceToolPath);
-    }
-
-    public boolean getPreventJobExecution() {
-        return configurationValues.getBoolean(ConfigurationConstants.CFG_PREVENT_JOB_EXECUTION);
-    }
-
-    public void disableJobExecution() {
-        configurationValues.add(new ConfigurationValue(ConfigurationConstants.CFG_PREVENT_JOB_EXECUTION, "true"));
     }
 
     public String getSSHExecutionUser() {
@@ -411,7 +423,7 @@ public class Configuration implements ContainerParent<Configuration> {
 
     public List<ConfigurationLoadError> getListOfLoadErrors() {
         LinkedList<ConfigurationLoadError> errors = new LinkedList<>();
-        for(Configuration c : parents) {
+        for (Configuration c : parents) {
             errors.addAll(c.getListOfLoadErrors());
         }
         errors.addAll(listOfLoadErrors);
@@ -421,7 +433,7 @@ public class Configuration implements ContainerParent<Configuration> {
 
     public boolean hasErrors() {
         boolean hasErrors = listOfLoadErrors.size() > 0;
-        if(parents != null) {
+        if (parents != null) {
             for (Configuration parent : parents) {
                 hasErrors |= parent.hasErrors();
             }

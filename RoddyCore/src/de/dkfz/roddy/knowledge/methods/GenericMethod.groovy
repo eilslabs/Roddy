@@ -7,6 +7,7 @@
 package de.dkfz.roddy.knowledge.methods
 
 import de.dkfz.roddy.config.*
+import de.dkfz.roddy.config.converters.BashConverter
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
 import de.dkfz.roddy.execution.jobs.BEJobResult
@@ -46,7 +47,15 @@ class GenericMethod {
      * @param additionalInput Any additional input to the job. The input must fit the tool i/o specs in your xml file.
      * @return
      */
+    // TODO: Roddy 4: Change the interface to use FileObject as input. Currently the method is used throughout plugins. Change now breaks bytecode compatibility.
+    @Deprecated
     static <F extends FileObject> F callGenericTool(String toolName, BaseFile input, Object... additionalInput) {
+        F result = new GenericMethod(toolName, null, input, null, additionalInput)._callGenericToolOrToolArray();
+        return result;
+    }
+
+    // TODO: This is a temporary solution. Rename to just call. See above.
+    static <F extends FileObject> F callGenericTool_fileObject(String toolName, FileObject input, Object... additionalInput) {
         F result = new GenericMethod(toolName, null, input, null, additionalInput)._callGenericToolOrToolArray();
         return result;
     }
@@ -55,7 +64,7 @@ class GenericMethod {
      * If you need a file group output and the files in the group need an index, then this is the right method to call!
      * @return
      */
-    static <F extends FileGroup> F callGenericToolWithFileGroupOutput(String toolName, BaseFile input, List<String> indices, Object... additionalInput) {
+    static <F extends FileGroup> F callGenericToolWithFileGroupOutput(String toolName, FileObject input, List<String> indices, Object... additionalInput) {
         F result = new GenericMethod(toolName, null, input, indices, additionalInput)._callGenericToolOrToolArray() as F
         return result
     }
@@ -64,7 +73,7 @@ class GenericMethod {
      * If you need a file group output and the files in the group need an index, then this is the right method to call! This one works with number for the files from 0 .. n -1
      * @return
      */
-    static <F extends FileGroup> F callGenericToolWithFileGroupOutput(String toolName, BaseFile input, int numericCount, Object... additionalInput) {
+    static <F extends FileGroup> F callGenericToolWithFileGroupOutput(String toolName, FileObject input, int numericCount, Object... additionalInput) {
         F result = new GenericMethod(toolName, null, input, numericCount, additionalInput)._callGenericToolOrToolArray() as F
         return result
     }
@@ -73,7 +82,7 @@ class GenericMethod {
      * If you need a file group output and the files are already set in the cfg, then this is the right method to call.
      * @return
      */
-    static <F extends FileGroup> F callGenericToolWithFileGroupOutput(String toolName, BaseFile input, Object... additionalInput) {
+    static <F extends FileGroup> F callGenericToolWithFileGroupOutput(String toolName, FileObject input, Object... additionalInput) {
         F result = new GenericMethod(toolName, null, input, null, additionalInput)._callGenericToolOrToolArray() as F
         return result
     }
@@ -89,7 +98,7 @@ class GenericMethod {
      * @param additionalInput Any additional input to the job. The input must fit the tool i/o specs in your xml file.
      * @return
      */
-    public static <F extends FileObject> F callGenericToolOrToolArray(String toolName, List<String> arrayIndices, BaseFile input, Object... additionalInput) {
+    public static <F extends FileObject> F callGenericToolOrToolArray(String toolName, List<String> arrayIndices, FileObject input, Object... additionalInput) {
         new GenericMethod(toolName, arrayIndices, input, null, additionalInput)._callGenericToolOrToolArray();
     }
 
@@ -237,6 +246,7 @@ class GenericMethod {
 
         updateParameters()
 
+        // TODO Allow for (multiple) groups in tuples.
         F outputObject = createOutputObject()
 
         List<BaseFile> filesToVerify = fillListOfCreatedObjects(outputObject)
@@ -271,13 +281,21 @@ class GenericMethod {
                 allInputValues << (FileGroup) entry
             } else if (entry instanceof Map) {
                 (entry as Map).forEach { k, v ->
-                    parameters[k.toString()] = v.toString()
+                    if (v instanceof List)
+                        parameters[k.toString()] = BashConverter.convertListToBashArrayString(v)
+                    else if (v instanceof Map)
+                        parameters[k.toString()] = BashConverter.convertMapToBashMapString(v)
+                    else
+                        parameters[k.toString()] = v.toString()
                 }
             } else {               // Catch-all, in case one still wants to use a string with '=' to define a parameter (deprecated).
                 String[] split = entry.toString().split("=")
                 if (split.length != 2)
                     throw new RuntimeException("Unable to convert entry ${entry.toString()} to parameter.")
                 parameters[split[0]] = split[1]
+                // Put null for things which are treated as "normal" parameters (parameter file).
+                // The null entry is a placeholder and will be ignored in followup steps.
+                allInputValues << null
             }
         }
     }
@@ -294,18 +312,15 @@ class GenericMethod {
             ToolEntry.ToolParameter toolParameter = calledTool.getInputParameters(context)[i];
             if (toolParameter instanceof ToolFileParameter) {
                 ToolFileParameter _tp = (ToolFileParameter) toolParameter;
-                //TODO Check if input and output parameters match and also check for array indices and item count. Throw a proper error message.
                 if(allInputValues.size() <= i ) {
-                    logger.severe("Not all input parameters were set for ${calledTool.id}. Expected ${calledTool.getInputParameters(context).size()}. Breaking loop and trying to go on.")
-                    continue
+                    throw new ConfigurationError("Not all input parameters were set for ${calledTool.id}. Expected ${calledTool.getInputParameters(context).size()}. Breaking loop and trying to go on.", "GenericMethod")
                 }
                 if(allInputValues[i] == null){
                     logger.severe("There is an input mismatch for the tool ${calledTool.id}. Expected ${_tp.fileClass} but got null. Trying to go on.")
                     continue
                 }
                 if (!allInputValues[i].class == _tp.fileClass){
-                    logger.severe("Class mismatch for " + allInputValues[i] + " should be of class " + _tp.fileClass + '. Trying to go on.');
-                    continue
+                    throw new ConfigurationError("Class mismatch for ${allInputValues[i]} should be of class ${_tp.fileClass}.", "GenericMethod");
                 }
                 if (_tp.scriptParameterName) {
                     parameters[_tp.scriptParameterName] = ((BaseFile) allInputValues[i]);
@@ -501,7 +516,6 @@ class GenericMethod {
 
                 //TODO URGENT
                 //The underlying error is that a configuration file has e.g. a typo, or not? Such kind of errors are user errors, where there is a clear cause (line X in file Y contains garbage Z). Ideally we would just display an error message with as much information possible to allow the user to fix the error, but no stack trace.
-                //Do you think it would make sense to separate out two groups of Exceptions, one that shows only the error message containing all information required to fix the input problem caused by the user, and the othor more fatal class of exceptions raised by the workflow or RoddyCore, that indicates real programming errors and are displayed with a full stack trace?
 
                 context.addErrorEntry(ExecutionContextError.EXECUTION_FILECREATION_NOCONSTRUCTOR.expand("File object of type ${fileParameter?.fileClass} with input ${firstInputFile?.class} needs a constructor which takes a ConstuctionHelper object."));
                 throw new RuntimeException("Could not find valid constructor for type  ${fileParameter?.fileClass} with input ${firstInputFile?.class}.");
@@ -532,7 +546,7 @@ class GenericMethod {
      * @param classToSearch
      * @return
      */
-    public static Constructor<BaseFile> searchBaseFileConstructorForConstructionHelperObject(Class classToSearch) {
+    static Constructor<BaseFile> searchBaseFileConstructorForConstructionHelperObject(Class classToSearch) {
         try {
             return classToSearch.getConstructor(BaseFile.ConstructionHelperForBaseFiles);
         } catch (Exception e) {

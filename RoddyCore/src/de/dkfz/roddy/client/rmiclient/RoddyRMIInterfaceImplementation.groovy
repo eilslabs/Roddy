@@ -23,6 +23,7 @@ import de.dkfz.roddy.execution.jobs.JobState;
 import de.dkfz.roddy.tools.LoggerWrapper
 import de.dkfz.roddy.tools.RoddyIOHelperMethods
 import groovy.transform.CompileStatic
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import java.rmi.RemoteException
 
@@ -202,7 +203,7 @@ public class RoddyRMIInterfaceImplementation implements RoddyRMIInterface {
         if (!analysesById.containsKey(analysisId)) {
             // We correct the analysisId and load it a bit differently than usual
             String project = Roddy.getCommandLineCall().getArguments()[1].split("[@]")[0]
-            analysesById[analysisId] =RoddyCLIClient.loadAnalysisOrFail("${project}@${analysisId}");
+            analysesById[analysisId] = RoddyCLIClient.loadAnalysisOrFail("${project}@${analysisId}");
         }
         return analysesById[analysisId];
     }
@@ -275,7 +276,8 @@ public class RoddyRMIInterfaceImplementation implements RoddyRMIInterface {
     boolean queryDataSetExecutability(String id, String analysisId) {
         return withServer(false, {
             if (queryDataSetState(id, analysisId) == JobState.RUNNING) return false
-            return loadAnalysis(analysisId).getWorkflow().checkExecutability(loadAnalysis(analysisId).run([id], ExecutionContextLevel.QUERY_STATUS)[0]);
+            def analysis = loadAnalysis(analysisId)
+            return ExecutionContext.createAnalysisWorkflowObject(analysis).checkExecutability(analysis.run([id], ExecutionContextLevel.QUERY_STATUS)[0]);
         });
     }
 
@@ -317,6 +319,6 @@ public class RoddyRMIInterfaceImplementation implements RoddyRMIInterface {
 
     @Override
     List<String> readRemoteFile(String path) throws RemoteException {
-        return withServer([], { Arrays.asList(FileSystemAccessProvider.getInstance().loadTextFile(new File(path))) }) as List<String>;
+        return withServer([], { Arrays.asList(FileSystemAccessProvider.getInstance().loadTextFile(new File(path))) ?: new String[0] }) as List<String>;
     }
 }

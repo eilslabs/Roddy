@@ -16,7 +16,6 @@ import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextError
 import de.dkfz.roddy.core.ExecutionContextLevel
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
-import de.dkfz.roddy.execution.jobs.cluster.ClusterJobManager
 import de.dkfz.roddy.execution.jobs.direct.synchronousexecution.DirectCommand
 import de.dkfz.roddy.execution.jobs.direct.synchronousexecution.DirectSynchronousExecutionJobManager
 import de.dkfz.roddy.knowledge.files.BaseFile
@@ -331,7 +330,7 @@ class Job extends BEJob<BEJob, BEJobResult> {
             } else
                 convertedParameters.add(o.toString())
         }
-        return BashConverter.convertListToBashArray(convertedParameters)
+        return BashConverter.convertListToBashArrayString(convertedParameters)
     }
 
 
@@ -426,6 +425,9 @@ class Job extends BEJob<BEJob, BEJobResult> {
      */
     @CompileDynamic
     void appendToJobStateLogfile(BatchEuphoriaJobManager jobManager, ExecutionContext executionContext, BEJobResult res, OutputStream out = null) {
+        if (!jobManager.isHoldJobsEnabled() && !jobManager instanceof DirectSynchronousExecutionJobManager) {
+            throw new RuntimeException("Appending to JobManager ${ConfigurationConstants.RODDY_JOBSTATE_LOGFILE} not supported when JobManager does not submit on hold: '${jobManager.class.name}")
+        }
         if (res.successful) {
             def job = res.command.getJob()
             String jobInfoLine
@@ -437,8 +439,9 @@ class Job extends BEJob<BEJob, BEJobResult> {
                     jobInfoLine = jobStateInfoLine(jobId, "UNSTARTED", millis, toolID)
                 else if (job.getJobState() == JobState.ABORTED)
                     jobInfoLine = jobStateInfoLine(jobId, "ABORTED", millis, toolID)
-                else if (job.getJobState() == JobState.COMPLETED_SUCCESSFUL)
-                    jobInfoLine = jobStateInfoLine(jobId, "0", millis, toolID)
+                // TODO Issue 222: COMPLETED_SUCCESSFUL is set by BE.ExecutionService, when the execution result is successful, i.e. the qsub, not when the job finished successfully on the cluster!
+//                else if (job.getJobState() == JobState.COMPLETED_SUCCESSFUL)
+//                    jobInfoLine = jobStateInfoLine(jobId, "0", millis, toolID)
                 else if (job.getJobState() == JobState.FAILED)
                     jobInfoLine = jobStateInfoLine(jobId, "" + res.executionResult.exitCode, millis, toolID)
                 else
@@ -448,7 +451,7 @@ class Job extends BEJob<BEJob, BEJobResult> {
                 jobInfoLine = null
             }
             if (jobInfoLine != null)
-                FileSystemAccessProvider.getInstance().appendLineToFile(true, executionContext.getRuntimeService().getNameOfJobStateLogFile(executionContext), jobInfoLine, false)
+                FileSystemAccessProvider.getInstance().appendLineToFile(true, executionContext.getRuntimeService().getJobStateLogFile(executionContext), jobInfoLine, false)
         }
     }
 
@@ -488,7 +491,7 @@ class Job extends BEJob<BEJob, BEJobResult> {
                 // That is indeed funny here: on our cluster, the following line did not work without the forced toString(), however
                 // on our local machine it always worked! Don't know why it worked for PBS... Now we force-convert the parameters.
                 String jobInfoLine = jobStateInfoLine("" + res.job.getJobID(), code, millis, toolID)
-                FileSystemAccessProvider.getInstance().appendLineToFile(true, executionContext.getRuntimeService().getNameOfJobStateLogFile(executionContext), jobInfoLine, false)
+                FileSystemAccessProvider.getInstance().appendLineToFile(true, executionContext.getRuntimeService().getJobStateLogFile(executionContext), jobInfoLine, false)
             } else {
                 logger.postSometimesInfo("Did not store info for job " + res.job.getJobName() + ", job id was null.")
             }
@@ -507,7 +510,7 @@ class Job extends BEJob<BEJob, BEJobResult> {
         parameters.keySet().removeAll(nonEssentialParameters)
     }
 
-    BEJobResult run() {
+    BEJobResult run(boolean appendToJobStateLogfile = true) {
         if (runResult != null)
             throw new RuntimeException(ERR_MSG_ONLY_ONE_JOB_ALLOWED)
 
@@ -521,7 +524,7 @@ class Job extends BEJob<BEJob, BEJobResult> {
         this.parameters[RODDY_PARENT_JOBS] = parameterObjectToString(RODDY_PARENT_JOBS, parentJobIDs.unique()*.id)
         this.parameters[PARAMETER_FILE] = parameterObjectToString(PARAMETER_FILE, parameterFile)
         // The CONFIG_FILE variable is set to the same value as the PARAMETER_FILE to keep older scripts working with job-specific only environments.
-        this.parameters[CONFIG_FILE] = this.parameters[PARAMETER_FILE]
+        this.parameters[CONFIG_FILE] = this.parameters[PARAMETER_FILE]  // TODO Deprecated. Remove this line in Roddy 4.0.
 
         boolean debugWrapInScript = false
         if (configuration.configurationValues.hasValue(DEBUG_WRAP_IN_SCRIPT)) {
@@ -534,16 +537,14 @@ class Job extends BEJob<BEJob, BEJobResult> {
                     Roddy.applicationConfiguration.getOrSetApplicationProperty(APP_PROPERTY_BASE_ENVIRONMENT_SCRIPT, ""))
         }
 
-        //See if the job should be executed
+        // See if the job should be executed
         boolean runJob
         if (contextLevel == ExecutionContextLevel.RUN || contextLevel == ExecutionContextLevel.CLEANUP) {
-            runJob = true //The job is always executed if run is selected
+            runJob = true
             jobDetailsLine << "  Running job " + jobName
         } else if (contextLevel == ExecutionContextLevel.RERUN || contextLevel == ExecutionContextLevel.TESTRERUN) {
             runJob = checkIfJobShouldRerun(dbgMessage)
             jobDetailsLine << "  Rerun job " + jobName
-        } else {
-            return handleDifferentJobRun(dbgMessage)
         }
 
         //Execute the job or create a dummy command.
@@ -551,7 +552,8 @@ class Job extends BEJob<BEJob, BEJobResult> {
             storeJobConfigurationFile(createJobConfiguration())
             keepOnlyEssentialParameters()
             runResult = jobManager.submitJob(this)
-            appendToJobStateLogfile(jobManager, executionContext, runResult, null)
+            if (appendToJobStateLogfile)
+                this.appendToJobStateLogfile(jobManager, executionContext, runResult, null)
             Command cmd = runResult.command
             jobDetailsLine << " => " + cmd.job.getJobID().toString().padRight(10) // If we have os process id attached, we'll need some space, so pad the output.
 
@@ -569,26 +571,26 @@ class Job extends BEJob<BEJob, BEJobResult> {
                 }
             }
             lastCommand = cmd
-        } else {
-            // The Job is not actually executed. Therefore, create a DummyCommand that creates a dummy JobID which in turn is used to create a dummy JobResult.
-            Command command = new DummyCommand(jobManager, this, jobName, false)
-            jobState = JobState.DUMMY
-            resetJobID(command.jobID)
-            runResult = new BEJobResult(command, new BEJob(command.jobID, jobManager), null, this.tool, parameters, parentJobs as List<BEJob>)
-        }
 
-        //For auto filenames. Get the job id and push propagate it to all filenames.
+            // For auto filenames. Get the job id and push propagate it to all filenames.
+            if (runResult?.jobID?.shortID) {
+                allRawInputParameters.each { String k, Object o ->
+                    BaseFile bf = o instanceof BaseFile ? (BaseFile) o : null
+                    if (!bf) return
 
-        if (runResult?.jobID?.shortID) {
-            allRawInputParameters.each { String k, Object o ->
-                BaseFile bf = o instanceof BaseFile ? (BaseFile) o : null
-                if (!bf) return
-
-                String absolutePath = bf.getPath().getAbsolutePath()
-                if (absolutePath.contains(CVALUE_PLACEHOLDER_RODDY_JOBID)) {
-                    bf.setPath(new File(absolutePath.replace(CVALUE_PLACEHOLDER_RODDY_JOBID, runResult.jobID.shortID)))
+                    String absolutePath = bf.getPath().getAbsolutePath()
+                    if (absolutePath.contains(CVALUE_PLACEHOLDER_RODDY_JOBID)) {
+                        bf.setPath(new File(absolutePath.replace(CVALUE_PLACEHOLDER_RODDY_JOBID, runResult.jobID.shortID)))
+                    }
                 }
             }
+
+        } else {
+            dbgMessage << "\tdummy job created." + ENV_LINESEPARATOR
+            File tool = context.getConfiguration().getProcessingToolPath(context, toolID)
+            resetJobID(new BEFakeJobID(BEFakeJobID.FakeJobReason.NOT_EXECUTED))
+            runResult = new BEJobResult((Command) null, this, null, tool, parameters, parentFiles.collect { it.getCreatingJobsResult()?.getJob() }.findAll { it })
+            jobState = JobState.DUMMY
         }
 
         return runResult
@@ -613,15 +615,6 @@ class Job extends BEJob<BEJob, BEJobResult> {
     void storeJobConfigurationFile(Configuration cfg) {
         String configText = ConfigurationConverter.convertAutomatically(context, cfg)
         FileSystemAccessProvider.getInstance().writeTextFile(getParameterFile(), configText, context)
-    }
-
-    private BEJobResult handleDifferentJobRun(StringBuilder dbgMessage) {
-        dbgMessage << "\tdummy job created." + ENV_LINESEPARATOR
-        File tool = context.getConfiguration().getProcessingToolPath(context, toolID)
-        this.resetJobID(new BEFakeJobID(BEFakeJobID.FakeJobReason.NOT_EXECUTED))
-        runResult = new BEJobResult((Command) null, this, null, tool, parameters, parentFiles.collect { it.getCreatingJobsResult()?.getJob() }.findAll { it })
-        this.setJobState(JobState.DUMMY)
-        return runResult
     }
 
     /**

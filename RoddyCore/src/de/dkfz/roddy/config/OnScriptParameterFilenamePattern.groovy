@@ -32,7 +32,7 @@ public class OnScriptParameterFilenamePattern extends FilenamePattern {
 
     //@Override
     protected BaseFile getSourceFile(BaseFile[] baseFiles) {
-        BaseFile baseFile = baseFiles[0];
+        BaseFile baseFile = baseFiles[0]
         if (baseFile.getParentFiles() != null && baseFile.getParentFiles().size() > 0)
             return (BaseFile) baseFile.getParentFiles().get(0); //In this case sourcefile is the first of the base files, if at least one basefile is available.
         return null;

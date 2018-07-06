@@ -48,15 +48,15 @@ public enum ExecutionContextLevel implements Serializable {
 
     public final boolean canSubmitJobs;
 
-    public final boolean isOrWasAllowedToSubmitJobs;
+    public final boolean allowedToSubmitJobs;
 
     private ExecutionContextLevel() {
         this.canSubmitJobs = false;
-        this.isOrWasAllowedToSubmitJobs = false;
+        this.allowedToSubmitJobs = false;
     }
 
-    private ExecutionContextLevel(boolean canSubmitJobs, boolean isOrWasAllowedToSubmitJobs) {
+    private ExecutionContextLevel(boolean canSubmitJobs, boolean allowedToSubmitJobs) {
         this.canSubmitJobs = canSubmitJobs;
-        this.isOrWasAllowedToSubmitJobs = isOrWasAllowedToSubmitJobs;
+        this.allowedToSubmitJobs = allowedToSubmitJobs;
     }
 }

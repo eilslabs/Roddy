@@ -18,7 +18,6 @@ declare -x    jobnamePrefix=defaultRoddyJobname
 declare -x    inputBaseDirectory=/data/michael/temp/exampleProject/project
 declare -x    outputBaseDirectory=/data/michael/temp/exampleProject/project
 declare -x    DEBUG=TRUE
-declare -x    preventJobExecution=false
 declare -x    UNZIPTOOL=gunzip
 declare -x    UNZIPTOOL_OPTIONS="-c"
 declare -x    ZIPTOOL=gzip

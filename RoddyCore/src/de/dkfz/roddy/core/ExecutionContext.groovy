@@ -11,13 +11,15 @@ import de.dkfz.roddy.Constants
 import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.config.Configuration
 import de.dkfz.roddy.config.ConfigurationConstants
-import de.dkfz.roddy.config.ConfigurationValue
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
 import de.dkfz.roddy.config.ToolEntry
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.execution.jobs.*
 import de.dkfz.roddy.knowledge.files.BaseFile
+import de.dkfz.roddy.plugins.LibrariesFactory
 import de.dkfz.roddy.tools.LoggerWrapper
+
+import java.util.logging.Level
 
 /**
  * An ExecutionContect is the runtime context for an analysis and a DataSet.<br />
@@ -55,6 +57,10 @@ class ExecutionContext {
      * The analysis for which this context was created
      */
     protected final Analysis analysis
+    /**
+     * The workflow for this context
+     */
+    protected final Workflow workflow
     /**
      * The source data set on which we work.
      */
@@ -134,20 +140,18 @@ class ExecutionContext {
         this(userID, analysis, dataSet, executionContextLevel, outputDirectory, inputDirectory, executionDirectory, -1)
     }
 
-    ExecutionContext(String userID, Analysis analysis, DataSet dataSet, ExecutionContextLevel executionContextLevel, File outputDirectory, File inputDirectory, File executionDirectory, long creationCheckPoint, boolean dontRaise) {
+    ExecutionContext(String userID, Analysis analysis, DataSet dataSet, ExecutionContextLevel executionContextLevel, File outputDirectory, File inputDirectory, File executionDirectory, long creationCheckPoint) {
         this.executionDirectory = executionDirectory
         this.outputDirectory = outputDirectory
         this.inputDirectory = inputDirectory
         this.creationCheckPoint = creationCheckPoint
         this.project = analysis?.getProject()
         this.analysis = analysis
+        this.workflow = createContextWorkflowObject(analysis, this)
         this.executionContextLevel = executionContextLevel
         this.dataSet = dataSet
-        setExecutingUser(userID)
-    }
 
-    ExecutionContext(String userID, Analysis analysis, DataSet dataSet, ExecutionContextLevel executionContextLevel, File outputDirectory, File inputDirectory, File executionDirectory, long creationCheckPoint) {
-        this(userID, analysis, dataSet, executionContextLevel, outputDirectory, inputDirectory, executionDirectory, creationCheckPoint, false)
+        setExecutingUser(userID)
     }
 
     /**
@@ -156,8 +160,9 @@ class ExecutionContext {
     ExecutionContext(AnalysisProcessingInformation api, Date readOutTimestamp) {
         this.executionDirectory = api.getExecPath()
         this.dataSet = api.getDataSet()
-        this.analysis = api.getAnalysis()
         this.project = analysis?.getProject()
+        this.analysis = api.getAnalysis()
+        this.workflow = createContextWorkflowObject(analysis, this)
         this.executionContextLevel = ExecutionContextLevel.READOUT
         this.inputDirectory = dataSet.getInputFolderForAnalysis(analysis)
         this.outputDirectory = dataSet.getOutputFolderForAnalysis(analysis)
@@ -171,6 +176,7 @@ class ExecutionContext {
     private ExecutionContext(ExecutionContext p) {
         this.project = p.project
         this.analysis = p.analysis
+        this.workflow = p.workflow
         this.dataSet = p.dataSet
         this.timestamp = p.timestamp
         this.inputDirectory = p.inputDirectory
@@ -197,6 +203,40 @@ class ExecutionContext {
      */
     ExecutionContext clone() {
         return new ExecutionContext(this)
+    }
+
+    /**
+     * Creates a workflow without a context object attached.
+     * @param analysis
+     * @return
+     */
+    static Workflow createAnalysisWorkflowObject(Analysis analysis) {
+        return createContextWorkflowObject(analysis, null)
+    }
+
+    /**
+     * Create a workflow object for an analysis / context. In most cases context will not be null.
+     * However, in analysis.cleanup and some rare other cases, a workflow object needs to be usable without a context.
+     * @param analysis
+     * @param context
+     * @return
+     */
+    static Workflow createContextWorkflowObject(Analysis analysis, ExecutionContext context) {
+        Class workflowClass = LibrariesFactory.getInstance().searchForClass(analysis.configuration.getWorkflowClass())
+        Workflow workflow
+        if (workflowClass.name.endsWith('$py')) {
+            // Jython creates a class called Workflow$py with a constructor with a single (unused) String parameter.
+            workflow = (Workflow) workflowClass.getConstructor(String).newInstance("dummy")
+        }
+
+        workflow = (Workflow) workflowClass.getConstructor().newInstance()
+        if (context)
+            workflow.setContext(context)
+        return workflow
+    }
+
+    Workflow getWorkflow() {
+        return workflow
     }
 
     Map<String, Object> getDefaultJobParameters(String TOOLID) {
@@ -361,7 +401,8 @@ class ExecutionContext {
             checkedIfAccessRightsCanBeSet = FileSystemAccessProvider.getInstance().checkIfAccessRightsCanBeSet(this)
             if (!checkedIfAccessRightsCanBeSet) {
                 modAllowed = false
-                addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("Access rights modification was disabled. The test on the file system raised an error."))
+                addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.
+                        expand("Access rights modification was disabled. The test on the file system raised an error.", Level.WARNING))
             }
         }
         return modAllowed
@@ -551,7 +592,7 @@ class ExecutionContext {
      * @return
      */
     boolean checkExecutability() {
-        return analysis.getWorkflow().checkExecutability(this)
+        return workflow.checkExecutability(this)
     }
 
     boolean valueIsEmpty(Object value, String variableName = null) {
@@ -596,7 +637,7 @@ class ExecutionContext {
      * @return
      */
     boolean execute() {
-        return analysis.getWorkflow().execute(this)
+        return workflow.execute(this)
     }
 
     @Override

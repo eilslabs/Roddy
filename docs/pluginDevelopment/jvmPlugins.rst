@@ -123,7 +123,7 @@ so we need to get at least one from storage.
 
     BaseFile createInitialTextFile(ExecutionContext ec) {
         BaseFile tf = BaseFile.constructSourceFile(
-            new File(ec.runtimeService.getOutputFolderForDataSetAndAnalysis(ec.getDataSet(),ec.getAnalysis()).getAbsolutePath(),
+            new File(ec.runtimeService.getOutputAnalysisFolder(ec.getDataSet(),ec.getAnalysis()).getAbsolutePath(),
               "textBase.txt"),
             ec,
             new SimpleFileStageSettings(ec.getDataSet(), "100", "R001"),

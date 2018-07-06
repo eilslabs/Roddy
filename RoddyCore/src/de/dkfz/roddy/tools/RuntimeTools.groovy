@@ -10,6 +10,7 @@ import de.dkfz.roddy.Constants
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.plugins.LibrariesFactory
 import de.dkfz.roddy.tools.versions.Version
+import de.dkfz.roddy.tools.versions.VersionLevel
 
 /**
  * A class which gives you access to several runtime specific values (e.g. from System.getProperty...)
@@ -22,7 +23,7 @@ final class RuntimeTools {
     private static final LoggerWrapper logger = LoggerWrapper.getLogger(RuntimeTools)
 
     static String getRoddyRuntimeVersion() {
-        return Version.fromString(Constants.APP_CURRENT_VERSION_STRING).toString(Version.VersionLevel.MINOR)
+        return Version.fromString(Constants.APP_CURRENT_VERSION_STRING).toString(VersionLevel.MINOR)
     }
 
     static String getJavaRuntimeVersion() {

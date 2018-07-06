@@ -39,7 +39,7 @@ pluginLine.each { pl -> pluginFolders.addAll(new File(pl).listFiles().findAll { 
 sourceDirectory = pluginFolders.find { it.name.endsWith(pluginID + ( (pluginVersion && !pluginVersion.equals("develop"))? "_$pluginVersion" : "")); }
 
 if (sourceDirectory == null) {
-    System.err.println("Could not find source directory among ${pluginFolders}")
+    System.err.println("Could not find source directory for '$pluginID' among:\n" + pluginFolders.sort().collect { "\t" + it + "\n" }.join(""))
 } else {
     println(sourceDirectory)
 }

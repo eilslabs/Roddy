@@ -9,15 +9,15 @@ When submitting code, please make every effort to follow existing conventions an
 By contributing your code, you agree to license your contribution under the terms of the MIT License:
 
 http://opensource.org/licenses/mit-license.html
-https://www.github.com/eilslabs/Roddy/LICENSE.txt
+https://www.github.com/TheRoddyWMS/Roddy/LICENSE.txt
 
 If you are adding a new file it should have a header like this:
 
 ```
 /**
- * Copyright 2016 eilslabs.
+ * Copyright 2016 German Cancer Research Center (DKFZ).
  * 
- * Distributed under the MIT License (license terms are at https://www.github.com/eilslabs/Roddy/LICENSE.txt).
+ * Distributed under the MIT License (license terms are at https://www.github.com/TheRoddyWMS/Roddy/LICENSE.txt).
  */
  ```
 

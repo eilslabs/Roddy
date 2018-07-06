@@ -42,7 +42,7 @@ public class ExecutionContextError implements Serializable {
 
     public static final ExecutionContextError EXECUTION_NOINPUTDATA = new ExecutionContextError("No input data was found.", Level.SEVERE);
 
-    public static final ExecutionContextError EXECUTION_UNCATCHEDERROR = new ExecutionContextError("An uncaught error occurred during a run.", Level.SEVERE);
+    public static final ExecutionContextError EXECUTION_UNCAUGHTERROR = new ExecutionContextError("An uncaught error occurred during a run.", Level.SEVERE);
 
     public static final ExecutionContextError EXECUTION_SUBMISSION_FAILURE = new ExecutionContextError("The job submission did not work, aborting job submission.", Level.SEVERE);
 

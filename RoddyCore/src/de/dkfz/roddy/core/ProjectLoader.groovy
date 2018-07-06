@@ -86,24 +86,16 @@ class ProjectLoader {
 
         try {
             Class analysisClass = LibrariesFactory.getInstance().loadClass(configuration.getConfiguredClass());
-            Class workflowClass = LibrariesFactory.getInstance().loadClass(configuration.getWorkflowClass());
             String _runtimeServiceClass = configuration.getRuntimeServiceClass();
-            Workflow workflow
-            if (workflowClass.name.endsWith('$py')) {
-                // Jython creates a class called Workflow$py with a constructor with a single (unused) String parameter.
-                workflow = (Workflow) workflowClass.getConstructor(String).newInstance("dummy")
-            } else {
-                workflow = (Workflow) workflowClass.getConstructor().newInstance();
-            }
             RuntimeService runtimeService
 
             if (_runtimeServiceClass) {
                 Class runtimeServiceClass = LibrariesFactory.getInstance().loadClass(_runtimeServiceClass);
                 runtimeService = (RuntimeService) runtimeServiceClass.getConstructor().newInstance();
             }
-            def constructor = analysisClass.getConstructor(String.class, Project.class, Workflow.class, RuntimeService.class, AnalysisConfiguration.class)
-            analysis = (Analysis) constructor.newInstance(analysisName, project, workflow, runtimeService, configuration);
-            logger.sometimes("Created an analysis object of class ${analysis.class.name} with workflow class ${workflow.class.name}.")
+            def constructor = analysisClass.getConstructor(String.class, Project.class, RuntimeService.class, AnalysisConfiguration.class)
+            analysis = (Analysis) constructor.newInstance(analysisName, project, runtimeService, configuration);
+            logger.sometimes("Created an analysis object of class ${analysis.class.name}.")
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
@@ -151,7 +143,7 @@ class ProjectLoader {
     Analysis loadAnalysisAndProject(String configurationIdentifier) {
         try {
             if (_analysisCache.containsKey(configurationIdentifier))
-                return _analysisCache[configurationIdentifier];
+                return _analysisCache[configurationIdentifier]
 
             extractProjectIDAndAnalysisIDOrFail(configurationIdentifier)
 
@@ -171,19 +163,19 @@ class ProjectLoader {
 
             // Also a failed analysis object should go to cache.
             // Put into cache
-            _analysisCache[configurationIdentifier] = analysis;
+            _analysisCache[configurationIdentifier] = analysis
 
             performFinalChecksOrFail(analysis, configurationIdentifier, projectConfiguration, projectID)
 
             // Try to build up the metadata table from here on. Project and analysis are ready.
-            MetadataTableFactory.getTable(analysis);
-            return analysis;
+            MetadataTableFactory.getTable(analysis)
+            return analysis
         } catch (ConfigurationLoaderException ex) {
             logger.severe(ex.message)
             return null
         } catch (ProjectLoaderException ex) {
             logger.severe(ex.message)
-            return null;
+            return null
         } catch (PluginLoaderException ex) {
             logger.severe(ex.message)
             return null
@@ -391,8 +383,8 @@ class ProjectLoader {
         extractKillSwitchesFromAnalysisConfiguration(analysisConfiguration)
 
         if (analysisConfiguration != null)
-            analysis = loadAnalysisConfiguration(analysisID, project, analysisConfiguration);
-        project.getAnalyses().add(analysis);
+            analysis = loadAnalysisConfiguration(analysisID, project, analysisConfiguration)
+        project.getAnalyses().add(analysis)
 
         if (analysis == null)
             throw new ProjectLoaderException("Could not load analysis ${analysisID}")
@@ -494,13 +486,36 @@ class ProjectLoader {
         List<String> errors = []
 
         // Earliest check for valid input and output directories. If they are not accessible or writeable.
-        // Start with the input directory
-        errors += checkDirForReadabilityAndExecutability(analysis.getInputBaseDirectory(), "input")
-        errors += checkDirForReadabilityAndExecutability(analysis.getOutputBaseDirectory(), "output")
+        // The checks are done before the readability tests because we need to check for the raw configuration values
+        // as the next check will already use translated value
 
-        // Out dir needs to be writable
-        if (!FileSystemAccessProvider.instance.isWritable(analysis.getOutputBaseDirectory()))
-            errors << (String) "The output was not writeable at path ${analysis.getOutputBaseDirectory()}."
+        String valueInDir = analysis.configuration.configurationValues.get(ConfigurationConstants.CFG_INPUT_BASE_DIRECTORY, "").value
+        String valueOutDir = analysis.configuration.configurationValues.get(ConfigurationConstants.CFG_OUTPUT_BASE_DIRECTORY, "").value
+        
+        if (!valueInDir && !valueOutDir) {
+            errors << "Both the input and output base directories are not set. You must set at least inputBaseDirectory or outputBaseDirectory."
+
+        } else {
+
+            // Fill variable, if it is missing. Log a warning.
+            if(!valueInDir) {
+                logger.always("The input base directory is not set. Taking the path of the output base directory instead.")
+                analysis.configuration.configurationValues.add(new ConfigurationValue(ConfigurationConstants.CFG_INPUT_BASE_DIRECTORY, valueOutDir, "path"))
+            }
+
+            if(!valueOutDir) {
+                logger.always("The output base directory is not set. Taking the path of the input base directory instead.")
+                analysis.configuration.configurationValues.add(new ConfigurationValue(ConfigurationConstants.CFG_OUTPUT_BASE_DIRECTORY, valueInDir, "path"))
+            }
+
+            // Now start with the input directory
+            errors += checkDirForReadabilityAndExecutability(analysis.getInputBaseDirectory(), "input")
+            errors += checkDirForReadabilityAndExecutability(analysis.getOutputBaseDirectory(), "output")
+
+            // Out dir needs to be writable
+            if (!FileSystemAccessProvider.instance.isWritable(analysis.getOutputBaseDirectory()))
+                errors << (String) "The output was not writeable at path ${analysis.getOutputBaseDirectory()}."
+        }
 
         if (!errors)
             return

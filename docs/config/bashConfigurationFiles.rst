@@ -15,7 +15,6 @@ and are ideally used for small project or generic configurations.
     #analysis C,aAnalysis,TestPlugin:develop
 
     outputBaseDirectory=/data/michael/temp/roddyLocalTest/testproject/rpp
-    preventJobExecution=false
     UNZIPTOOL=gunzip
     ZIPTOOL_OPTIONS="-c"
     sampleDirectory=/data/michael/temp/roddyLocalTest/testproject/vbp/A100/${sample}/${SEQUENCER_PROTOCOL}*
@@ -42,7 +41,6 @@ After the header comes the configuration values section.
 .. code-block:: Bash
 
     outputBaseDirectory=/data/michael/temp/roddyLocalTest/testproject/rpp
-    preventJobExecution=false
     UNZIPTOOL=gunzip
     ZIPTOOL_OPTIONS="-c"
     sampleDirectory=/data/michael/temp/roddyLocalTest/testproject/vbp/A100/${sample}/${SEQUENCER_PROTOCOL}*

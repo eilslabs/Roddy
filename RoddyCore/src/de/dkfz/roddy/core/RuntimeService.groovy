@@ -1,16 +1,18 @@
 /*
- * Copyright (c) 2016 eilslabs.
+ * Copyright (c) 2018 German Cancer Research Center (DKFZ).
  *
  * Distributed under the MIT License (license terms are at https://www.github.com/eilslabs/Roddy/LICENSE.txt).
  */
 
 package de.dkfz.roddy.core
 
+import de.dkfz.roddy.config.Configuration
+import de.dkfz.roddy.config.ConfigurationError
+import de.dkfz.roddy.config.ConfigurationValue
 import de.dkfz.roddy.execution.jobs.Job
 import de.dkfz.roddy.Constants
 import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.StringConstants
-import de.dkfz.roddy.config.Configuration
 import de.dkfz.roddy.config.ConfigurationConstants
 import de.dkfz.roddy.config.ToolEntry
 import de.dkfz.roddy.execution.io.BaseMetadataTable
@@ -30,8 +32,8 @@ import org.apache.commons.io.filefilter.WildcardFileFilter
  * @author michael
  */
 @CompileStatic
-public class RuntimeService {
-    private static LoggerWrapper logger = LoggerWrapper.getLogger(RuntimeService.class.getSimpleName());
+class RuntimeService {
+    private static LoggerWrapper logger = LoggerWrapper.getLogger(RuntimeService.class.getSimpleName())
     public static final String FILENAME_RUNTIME_INFO = "versionsInfo.txt"
     public static final String FILENAME_RUNTIME_CONFIGURATION = "runtimeConfig.sh"
     public static final String FILENAME_RUNTIME_CONFIGURATION_XML = "runtimeConfig.xml"
@@ -46,7 +48,7 @@ public class RuntimeService {
     public static final String DIRNAME_CONFIG_FILES = "configurationFiles"
     public static final String RODDY_CENTRAL_EXECUTION_DIRECTORY = "RODDY_CENTRAL_EXECUTION_DIRECTORY"
 
-    public RuntimeService() {
+    RuntimeService() {
         logger.warning("Reading in jobs is not fully enabled! See RuntimeService readInExecutionContext(). The method does not reconstruct parent files and dependencies.")
     }
 
@@ -57,40 +59,40 @@ public class RuntimeService {
      * @param analysis
      * @return
      */
-    public List<DataSet> loadListOfInputDataSets(Analysis analysis) {
+    List<DataSet> loadListOfInputDataSets(Analysis analysis) {
         //TODO: Better logging if the directory could not be read or no files were found.
         def directory = analysis.getInputBaseDirectory()
         return loadDataSetsFromDirectory(directory, analysis)
     }
 
-    public List<DataSet> loadListOfOutputDataSets(Analysis analysis) {
+    List<DataSet> loadListOfOutputDataSets(Analysis analysis) {
         def directory = analysis.getOutputBaseDirectory()
         return loadDataSetsFromDirectory(directory, analysis)
     }
 
-    public List<DataSet> loadCombinedListOfPossibleDataSets(Analysis analysis) {
+    List<DataSet> loadCombinedListOfPossibleDataSets(Analysis analysis) {
 
         if (Roddy.isMetadataCLOptionSet()) {
 
             BaseMetadataTable table = MetadataTableFactory.getTable(analysis)
-            List<String> _datasets = table.listDatasets();
-            String pOut = analysis.getOutputBaseDirectory().getAbsolutePath() + File.separator;
-            return _datasets.collect { new DataSet(analysis, it, new File(pOut + it), table); }
+            List<String> _datasets = table.listDatasets()
+            String pOut = analysis.getOutputBaseDirectory().getAbsolutePath() + File.separator
+            return _datasets.collect { new DataSet(analysis, it, new File(pOut + it), table) }
 
         } else {
 
-            List<DataSet> lid = loadListOfInputDataSets(analysis);
-            List<DataSet> lod = loadListOfOutputDataSets(analysis);
+            List<DataSet> lid = loadListOfInputDataSets(analysis)
+            List<DataSet> lod = loadListOfOutputDataSets(analysis)
 
             //Now combine lid and lod.
             Collection<DataSet> additional = lod.findAll {
-                DataSet ds -> !lid.find { DataSet inLid -> inLid.getId() == ds.getId(); };
+                DataSet ds -> !lid.find { DataSet inLid -> inLid.getId() == ds.getId() }
             }
-            lid += additional.each { DataSet ds -> ds.setAsAvailableInOutputOnly(); }
-            lid.removeAll { DataSet ds -> ds.getId().startsWith(".roddy"); } //Filter out roddy specific files or folders.
-            lid.sort { DataSet a, DataSet b -> a.getId().compareTo(b.getId()); }
+            lid += additional.each { DataSet ds -> ds.setAsAvailableInOutputOnly() }
+            lid.removeAll { DataSet ds -> ds.getId().startsWith(".roddy") } //Filter out roddy specific files or folders.
+            lid.sort { DataSet a, DataSet b -> a.getId().compareTo(b.getId()) }
             logger.postAlwaysInfo("Found ${lid.size()} datasets in the in- and output directories.")
-            return lid;
+            return lid
         }
     }
 
@@ -103,24 +105,24 @@ public class RuntimeService {
      * @return
      */
     private static LinkedList<DataSet> loadDataSetsFromDirectory(File directory, Analysis analysis) {
-        logger.postRareInfo("Looking for datasets in ${directory.absolutePath}.");
+        logger.postRareInfo("Looking for datasets in ${directory.absolutePath}.")
 
-        FileSystemAccessProvider fip = FileSystemAccessProvider.getInstance();
+        FileSystemAccessProvider fip = FileSystemAccessProvider.getInstance()
 
-        List<DataSet> results = new LinkedList<DataSet>();
-        List<File> files = fip.listDirectoriesInDirectory(directory);
+        List<DataSet> results = new LinkedList<DataSet>()
+        List<File> files = fip.listDirectoriesInDirectory(directory)
 
-        logger.postSometimesInfo("Found ${files.size()} datasets in ${directory.absolutePath}.");
+        logger.postSometimesInfo("Found ${files.size()} datasets in ${directory.absolutePath}.")
 
-        File pOut = analysis.getOutputBaseDirectory();
-        String pOutStr = pOut.getAbsolutePath();
+        File pOut = analysis.getOutputBaseDirectory()
+        String pOutStr = pOut.getAbsolutePath()
         for (File f : files) {
-            String id = f.getName();
+            String id = f.getName()
             //TODO: Correct writeConfigurationFile of the output directory! like basepath/dataSet/analysis/
-            DataSet dataSet = new DataSet(analysis, id, new File(pOutStr + File.separator + id));
-            results.add(dataSet);
+            DataSet dataSet = new DataSet(analysis, id, new File(pOutStr + File.separator + id))
+            results.add(dataSet)
         }
-        return results;
+        return results
     }
 
     /**
@@ -136,42 +138,30 @@ public class RuntimeService {
      *
      * @return
      */
-    public List<DataSet> getListOfPossibleDataSets(Analysis analysis, boolean avoidRecursion = false) {
+    List<DataSet>  getListOfPossibleDataSets(Analysis analysis, boolean avoidRecursion = false) {
 
         if (_listOfPossibleDataSetsByAnalysis[analysis] == null)
-            _listOfPossibleDataSetsByAnalysis[analysis] = loadCombinedListOfPossibleDataSets(analysis);
+            _listOfPossibleDataSetsByAnalysis[analysis] = loadCombinedListOfPossibleDataSets(analysis)
 
         if (!avoidRecursion) {
-            List<AnalysisProcessingInformation> previousExecs = readoutExecCacheFile(analysis);
+            List<AnalysisProcessingInformation> previousExecs = readoutExecCacheFile(analysis)
 
             for (DataSet ds : _listOfPossibleDataSetsByAnalysis[analysis]) {
                 for (AnalysisProcessingInformation api : previousExecs) {
                     if (api.getDataSet() == ds) {
-                        ds.addProcessingInformation(api);
+                        ds.addProcessingInformation(api)
                     }
                 }
-                analysis.getProject().updateDataSet(ds, analysis);
+                analysis.getProject().updateDataSet(ds, analysis)
             }
         }
 
-        return _listOfPossibleDataSetsByAnalysis[analysis];
-    }
-
-
-    boolean validateCohortDataSetLoadingString(String s) {
-        String PID = '[\\w*?_-]+'
-        // First part PID, followed by 0 to n ;PID
-        String COHORT = "c[:]${PID}(;${PID}){0,}"
-
-        // First part COHORT, followed by 0 to n |COHORT
-        def regex = "s\\[${COHORT}(\\|$COHORT){0,}\\]"
-
-        return s ==~ regex
+        return _listOfPossibleDataSetsByAnalysis[analysis]
     }
 
     List<DataSet> loadDatasetsWithFilter(Analysis analysis, List<String> pidFilters, boolean suppressInfo = false) {
         if (analysis.configuration?.configurationValues?.getBoolean("loadCohortDatasets", false)) {
-            return loadCohortDatasetsWithFilter(analysis, pidFilters, suppressInfo)
+            return new CohortDataRuntimeServiceExtension(this).loadCohortDatasetsWithFilter(analysis, pidFilters)
         } else {
             loadStandardDatasetsWithFilter(analysis, pidFilters, suppressInfo)
         }
@@ -180,126 +170,27 @@ public class RuntimeService {
     /** There are non-cohort (=standard) datasets and cohort datasets */
     List<DataSet> loadStandardDatasetsWithFilter(Analysis analysis, List<String> pidFilters, boolean suppressInfo = false) {
         if (pidFilters == null || pidFilters.size() == 0 || pidFilters.size() == 1 && pidFilters.get(0).equals("[ALL]")) {
-            pidFilters = Arrays.asList("*");
+            pidFilters = Arrays.asList("*")
         }
-        List<DataSet> listOfDataSets = getListOfPossibleDataSets(analysis);
-        return selectDatasetsFromPattern(analysis, pidFilters, listOfDataSets, suppressInfo);
-    }
-
-    /**
-     * In difference to the normal behaviour, the method / workflow loads with supercohorts and cohorts thus using a different
-     * dataset id format on the command line:
-     * run p@a s:[c:DS0;DS1;...;DSn|c:DS2;...]
-     *
-     * comma separation stays
-     * a cohort must be marked with c: in front of it. That is just to make the call clear and has no actual use!
-     * entries in a cohort are separated by semicolon!
-     * Remark, that order matters! The first entry of a cohor is the major cohort dataset which will e.g. be used for file
-     * output, if applicable.
-     *
-     * TODO Identify cases, where the matching mechanism should fail! Like e.g. when a dataset is missing but requested.
-     * - Using wildcards? At least one dataset should be matched for each wildcard entry.
-     * - Using no wildcards? There must be one dataset match.
-     *
-     * @param analysis
-     * @param pidFilters
-     * @param suppressInfo
-     * @return
-     */
-    List<DataSet> loadCohortDatasetsWithFilter(Analysis analysis, List<String> pidFilters, boolean suppressInfo) {
-        List<DataSet> listOfDataSets = getListOfPossibleDataSets(analysis);
-        List<SuperCohortDataSet> datasets
-
-        if (!checkCohortDataSetIdentifiers(pidFilters)) return []
-
-        boolean error = false
-
-        // Checks are all done, now get the datasets..
-        datasets = pidFilters.collect { String superCohortDescription ->
-
-            // Remove leading s[ and trailing ], split by |
-            List<CohortDataSet> cohortDatasets = superCohortDescription[2..-2].split("[|]").collect { String cohortDescription ->
-
-                // Remove leading c:, split by ;
-                String[] datasetFilters = cohortDescription[2..-1].split(StringConstants.SPLIT_SEMICOLON);
-
-                List<DataSet> dList = collectDataSetsForCohort(datasetFilters, analysis, listOfDataSets)
-
-                // Sort the list, but keep the primary set the primary set.
-                DataSet primaryDataSet = dList[0];
-                dList = dList.sort().unique() as ArrayList<DataSet>
-                dList.remove(primaryDataSet)
-                dList.add(0, primaryDataSet)
-                if (primaryDataSet && dList)
-                    return new CohortDataSet(analysis, cohortDescription, primaryDataSet, dList)
-                else
-                    return null;
-            }.findAll { it } as List<CohortDataSet>
-            if (cohortDatasets)
-                return new SuperCohortDataSet(analysis, superCohortDescription, cohortDatasets)
-            else
-                return (SuperCohortDataSet) null;
-        }.findAll { it }
-        if (error)
-            return []
-        return datasets as List<DataSet>;
-    }
-
-    private boolean checkCohortDataSetIdentifiers(List<String> pidFilters) {
-        // First some checks, if the cohort loading string was set properly.
-        boolean foundFaulty = false;
-        for (filter in pidFilters) {
-            boolean faulty = !validateCohortDataSetLoadingString(filter)
-            if (faulty) {
-                logger.severe("The ${Constants.PID} string ${filter} is malformed.")
-                foundFaulty = true
-            }
-        }
-        if (foundFaulty) {
-            logger.severe("The dataset list you provided contains errors, Roddy will not start jobs.")
-            return false
-        }
-        return true
-    }
-
-    private List<DataSet> collectDataSetsForCohort(String[] datasetFilters, Analysis analysis, List<DataSet> listOfDataSets) {
-        boolean error = false
-        List<DataSet> dList = []
-
-        datasetFilters.collect { String _filter ->
-            if (!_filter)
-                return;
-            List<DataSet> res = selectDatasetsFromPattern(analysis, [_filter], listOfDataSets, true);
-            if (_filter.contains("*") || _filter.contains("?")) {
-                if (!res) {
-                    logger.severe("Could not find a match for cohort part: ${_filter}")
-                    error = true;
-                }
-            } else if (res.size() != 1) {
-                logger.severe("Only one match is allowed for cohort part: ${_filter}")
-                error = true;
-            }
-            return res;
-        }.flatten()
-        if (error) return null
-        return dList as ArrayList<DataSet>
+        List<DataSet> listOfDataSets = getListOfPossibleDataSets(analysis)
+        return selectDatasetsFromPattern(analysis, pidFilters, listOfDataSets, suppressInfo)
     }
 
     List<DataSet> selectDatasetsFromPattern(Analysis analysis, List<String> pidFilters, List<DataSet> listOfDataSets, boolean suppressInfo) {
 
-        List<DataSet> selectedDatasets = new LinkedList<>();
-        WildcardFileFilter wff = new WildcardFileFilter(pidFilters);
+        List<DataSet> selectedDatasets = new LinkedList<>()
+        WildcardFileFilter wff = new WildcardFileFilter(pidFilters)
         for (DataSet ds : listOfDataSets) {
-            File inputFolder = ds.getInputFolderForAnalysis(analysis);
+            File inputFolder = getInputAnalysisBaseDirectory(ds, analysis)
             if (!wff.accept(inputFolder))
-                continue;
-            if (!suppressInfo) logger.info(String.format("Selected dataset %s for processing.", ds.getId()));
-            selectedDatasets.add(ds);
+                continue
+            if (!suppressInfo) logger.info(String.format("Selected dataset %s for processing.", ds.getId()))
+            selectedDatasets.add(ds)
         }
 
         if (selectedDatasets.size() == 0)
-            logger.postAlwaysInfo("There were no available datasets for the provided pattern.");
-        return selectedDatasets;
+            logger.postAlwaysInfo("There were no available datasets for the provided pattern.")
+        return selectedDatasets
     }
 
     ExecutionContext readInExecutionContext(AnalysisProcessingInformation api) {
@@ -314,117 +205,117 @@ public class RuntimeService {
         return new ExecutionContextReaderAndWriter(this).writeJobInfoFile(context)
     }
 
-    public List<String> collectNamesOfRunsForPID(DataSet dataSet) {
-        FileSystemAccessProvider fip = FileSystemAccessProvider.getInstance();
-        List<File> execList = fip.listDirectoriesInDirectory(dataSet.getOutputBaseFolder(), Arrays.asList(ConfigurationConstants.RODDY_EXEC_DIR_PREFIX + "*"));
-        List<String> names = new LinkedList<String>();
+    List<String> collectNamesOfRunsForPID(DataSet dataSet) {
+        FileSystemAccessProvider fip = FileSystemAccessProvider.getInstance()
+        List<File> execList = fip.listDirectoriesInDirectory(dataSet.getOutputBaseFolder(), Arrays.asList(ConfigurationConstants.RODDY_EXEC_DIR_PREFIX + "*"))
+        List<String> names = new LinkedList<String>()
         for (File f : execList) {
-            names.add(f.getName());
+            names.add(f.getName())
         }
-        return names;
+        return names
     }
 
-    public File getDirectory(String dirName, ExecutionContext run) {
-        Analysis analysis = run.getAnalysis();
-        Configuration c = analysis.getConfiguration();
-        File path = new File(c.getConfigurationValues().get(ConfigurationConstants.CFG_OUTPUT_ANALYSIS_BASE_DIRECTORY).toFile(run).toString() + File.separator + dirName);
-        return path;
+    File getDirectory(String dirName, ExecutionContext context) {
+        return new File(getOutputAnalysisBaseDirectory(context), dirName)
     }
 
-    public File getBaseExecutionDirectory(ExecutionContext context) {
-        String outPath = getOutputFolderForDataSetAndAnalysis(context.getDataSet(), context.getAnalysis()).absolutePath
-        String sep = FileSystemAccessProvider.getInstance().getPathSeparator();
-        return new File("${outPath}${sep}roddyExecutionStore");
+
+    File getBaseExecutionDirectory(ExecutionContext context) {
+        String outPath = getOutputAnalysisBaseDirectory(context.getDataSet(), context.getAnalysis()).absolutePath
+        String sep = FileSystemAccessProvider.getInstance().getPathSeparator()
+        return new File("${outPath}${sep}roddyExecutionStore")
     }
 
-    public File getExecutionDirectory(ExecutionContext context) {
+    File getExecutionDirectory(ExecutionContext context) {
         if (context.hasExecutionDirectory())
-            return context.getExecutionDirectory();
+            return context.getExecutionDirectory()
 
-        String outPath = getOutputFolderForDataSetAndAnalysis(context.getDataSet(), context.getAnalysis()).absolutePath
-        String sep = FileSystemAccessProvider.getInstance().getPathSeparator();
+        String outPath = getOutputAnalysisBaseDirectory(context.getDataSet(), context.getAnalysis()).absolutePath
+        String sep = FileSystemAccessProvider.getInstance().getPathSeparator()
 
         String dirPath = "${outPath}${sep}roddyExecutionStore${sep}${ConfigurationConstants.RODDY_EXEC_DIR_PREFIX}${context.getTimestampString()}_${context.getExecutingUser()}_${context.getAnalysis().getName()}"
         if (context.getExecutionContextLevel() == ExecutionContextLevel.CLEANUP)
             dirPath += "_cleanup"
-        return new File(dirPath);
+        return new File(dirPath)
     }
 
-    public File getCommonExecutionDirectory(ExecutionContext context) {
+    File getCommonExecutionDirectory(ExecutionContext context) {
         try {
 
             def values = context.getConfiguration().getConfigurationValues()
             if (values.hasValue(RODDY_CENTRAL_EXECUTION_DIRECTORY)) {
-                File configuredPath = values.get(RODDY_CENTRAL_EXECUTION_DIRECTORY, null)?.toFile(context);
+                File configuredPath = values.get(RODDY_CENTRAL_EXECUTION_DIRECTORY, null)?.toFile(context)
                 if (configuredPath)
-                    return configuredPath;
+                    return configuredPath
             }
         } catch (Exception ex) {
             logger.severe("There was an error in toFile for cvalue ${RODDY_CENTRAL_EXECUTION_DIRECTORY} in RuntimeService:getCommonExecutionDirectory()")
         }
-        return new File(getOutputFolderForProject(context).getAbsolutePath() + FileSystemAccessProvider.getInstance().getPathSeparator() + DIRECTORY_RODDY_COMMON_EXECUTION);
+        return new File(getOutputBaseDirectory(context).getAbsolutePath() + FileSystemAccessProvider.getInstance().getPathSeparator() + DIRECTORY_RODDY_COMMON_EXECUTION)
     }
 
-    public File getAnalysedMD5OverviewFile(ExecutionContext context) {
-        return new File(getCommonExecutionDirectory(context).getAbsolutePath(), FILENAME_ANALYSES_MD5_OVERVIEW);
+    File getAnalysedMD5OverviewFile(ExecutionContext context) {
+        return new File(getCommonExecutionDirectory(context).getAbsolutePath(), FILENAME_ANALYSES_MD5_OVERVIEW)
     }
 
-    public File getLoggingDirectory(ExecutionContext context) {
-        return getExecutionDirectory(context);
+    File getLoggingDirectory(ExecutionContext context) {
+        return getExecutionDirectory(context)
     }
 
-    public File getLockFilesDirectory(ExecutionContext context) {
-        File f = new File(getTemporaryDirectory(context), "lockfiles");
-        return f;
+    File getLockFilesDirectory(ExecutionContext context) {
+        File f = new File(getTemporaryDirectory(context), "lockfiles")
+        return f
     }
 
-    public File getTemporaryDirectory(ExecutionContext run) {
-        return new File(getExecutionDirFilePrefixString(run) + "temp");
+    File getTemporaryDirectory(ExecutionContext run) {
+        return new File(getExecutionDirFilePrefixString(run) + "temp")
     }
 
-    public Date extractDateFromExecutionDirectory(File dir) {
-        String[] splitted = dir.getName().split(StringConstants.SPLIT_UNDERSCORE);
-        return InfoObject.parseTimestampString(splitted[1] + StringConstants.SPLIT_UNDERSCORE + splitted[2]);
+    Date extractDateFromExecutionDirectory(File dir) {
+        String[] splitted = dir.name.split(StringConstants.SPLIT_UNDERSCORE)
+        if (splitted.size() < 3)
+            throw new RuntimeException("Could not split presumable execution directory on '_' into at least three parts: ${dir.name}")
+        return InfoObject.parseTimestampString(splitted[1] + StringConstants.SPLIT_UNDERSCORE + splitted[2])
     }
 
     private String getExecutionDirFilePrefixString(ExecutionContext run) {
         try {
-            return String.format("%s%s", run.getExecutionDirectory().getAbsolutePath(), FileSystemAccessProvider.getInstance().getPathSeparator());
+            return String.format("%s%s", run.getExecutionDirectory().getAbsolutePath(), FileSystemAccessProvider.getInstance().getPathSeparator())
         } catch (Exception ex) {
-            return String.format("%s%s", run.getExecutionDirectory().getAbsolutePath(), FileSystemAccessProvider.getInstance().getPathSeparator());
+            return String.format("%s%s", run.getExecutionDirectory().getAbsolutePath(), FileSystemAccessProvider.getInstance().getPathSeparator())
         }
     }
 
-    public File getNameOfConfigurationFile(ExecutionContext run) {
-        return new File(getExecutionDirFilePrefixString(run) + FILENAME_RUNTIME_CONFIGURATION);
+    File getConfigurationFile(ExecutionContext run) {
+        return new File(getExecutionDirFilePrefixString(run) + FILENAME_RUNTIME_CONFIGURATION)
     }
 
-    public File getNameOfXMLConfigurationFile(ExecutionContext run) {
-        return new File(getExecutionDirFilePrefixString(run) + FILENAME_RUNTIME_CONFIGURATION_XML);
+    File getXMLConfigurationFile(ExecutionContext run) {
+        return new File(getExecutionDirFilePrefixString(run) + FILENAME_RUNTIME_CONFIGURATION_XML)
     }
 
-    public File getNameOfRealCallsFile(ExecutionContext run) {
-        return new File(getExecutionDirFilePrefixString(run) + FILENAME_REALJOBCALLS);
+    File getRealCallsFile(ExecutionContext run) {
+        return new File(getExecutionDirFilePrefixString(run) + FILENAME_REALJOBCALLS)
     }
 
-    public File getNameOfRepeatableJobCallsFile(ExecutionContext run) {
-        return new File(getExecutionDirFilePrefixString(run) + FILENAME_REPEATABLEJOBCALLS);
+    File getRepeatableJobCallsFile(ExecutionContext run) {
+        return new File(getExecutionDirFilePrefixString(run) + FILENAME_REPEATABLEJOBCALLS)
     }
 
-    public File getNameOfJobInfoFile(ExecutionContext context) {
-        return new File(getExecutionDirFilePrefixString(context) + FILENAME_EXECUTEDJOBS_INFO);
+    File getJobInfoFile(ExecutionContext context) {
+        return new File(getExecutionDirFilePrefixString(context) + FILENAME_EXECUTEDJOBS_INFO)
     }
 
-    public File getNameOfJobStateLogFile(ExecutionContext run) {
-        return new File(run.getExecutionDirectory().getAbsolutePath() + FileSystemAccessProvider.getInstance().getPathSeparator() + ConfigurationConstants.RODDY_JOBSTATE_LOGFILE);
+    File getJobStateLogFile(ExecutionContext run) {
+        return new File(run.getExecutionDirectory().getAbsolutePath() + FileSystemAccessProvider.getInstance().getPathSeparator() + ConfigurationConstants.RODDY_JOBSTATE_LOGFILE)
     }
 
-    public File getNameOfExecCacheFile(Analysis analysis) {
-        return new File(analysis.getOutputBaseDirectory().getAbsolutePath() + FileSystemAccessProvider.getInstance().getPathSeparator() + ConfigurationConstants.RODDY_EXEC_CACHE_FILE);
+    File getExecCacheFile(Analysis analysis) {
+        return new File(analysis.getOutputBaseDirectory().getAbsolutePath() + FileSystemAccessProvider.getInstance().getPathSeparator() + ConfigurationConstants.RODDY_EXEC_CACHE_FILE)
     }
 
-    public File getNameOfRuntimeFile(ExecutionContext context) {
-        return new File(getExecutionDirFilePrefixString(context) + FILENAME_RUNTIME_INFO);
+    File getRuntimeFile(ExecutionContext context) {
+        return new File(getExecutionDirFilePrefixString(context) + FILENAME_RUNTIME_INFO)
     }
 
     /** Only the first matching ${dataSet} or ${pid} will be returned. ${dataSet} has precedence over ${pid}.
@@ -433,9 +324,9 @@ public class RuntimeService {
      * @param analysis
      * @return
      */
-    public String extractDataSetIDFromPath(File path, Analysis analysis) {
-        String pattern = analysis.getConfiguration().getConfigurationValues().get(ConfigurationConstants.CFG_OUTPUT_ANALYSIS_BASE_DIRECTORY).toFile(analysis).getAbsolutePath()
-        RoddyIOHelperMethods.getPatternVariableFromPath(pattern, "dataSet", path.getAbsolutePath()).
+    String extractDataSetIDFromPath(File path, Analysis analysis) {
+        String pattern = getOutputAnalysisBaseCV(analysis).toFile(analysis).getAbsolutePath()
+        RoddyIOHelperMethods.getPatternVariableFromPath(pattern, Constants.DATASET, path.getAbsolutePath()).
                 orElse(RoddyIOHelperMethods.getPatternVariableFromPath(pattern, Constants.PID, path.getAbsolutePath()).
                         orElse(Constants.UNKNOWN))
     }
@@ -444,34 +335,36 @@ public class RuntimeService {
      * Looks in the projects output directory if the cache file exists. If it does not exist it is created using the find command.
      * @param project
      */
-    public List<AnalysisProcessingInformation> readoutExecCacheFile(Analysis analysis) {
-        File cacheFile = getNameOfExecCacheFile(analysis);
-        String[] execCache = FileSystemAccessProvider.getInstance().loadTextFile(cacheFile);
-        List<AnalysisProcessingInformation> processInfo = [];
-        List<File> execDirectories = [];
+    List<AnalysisProcessingInformation> readoutExecCacheFile(Analysis analysis) {
+        File cacheFile = getExecCacheFile(analysis)
+        String[] execCache = FileSystemAccessProvider.getInstance().loadTextFile(cacheFile)
+        if (execCache == null)
+            execCache = new String[0]
+        List<AnalysisProcessingInformation> processInfo = []
+        List<File> execDirectories = []
         Arrays.asList(execCache).parallelStream().each {
             String line ->
-                if (line == "") return;
-                String[] info = line.split(",");
-                if (info.length < 2) return;
-                File path = new File(info[0]);
-                execDirectories << path;
+                if (line == "") return
+                String[] info = line.split(",")
+                if (info.length < 2) return
+                File path = new File(info[0])
+                execDirectories << path
                 String dataSetID
                 try {
-                    dataSetID = analysis.getRuntimeService().extractDataSetIDFromPath(path, analysis);
+                    dataSetID = analysis.getRuntimeService().extractDataSetIDFromPath(path, analysis)
                 } catch (RuntimeException e) {
                     throw new RuntimeException(e.message + ". Please delete/backup '${cacheFile}' and restart Roddy.")
                 }
                 Analysis dataSetAnalysis = analysis.getProject().getAnalysis(info[1])
-                DataSet ds = analysis.getDataSet(dataSetID);
+                DataSet ds = analysis.getDataSet(dataSetID)
                 if (dataSetAnalysis == analysis) {
-                    AnalysisProcessingInformation api = new AnalysisProcessingInformation(dataSetAnalysis, ds, path);
+                    AnalysisProcessingInformation api = new AnalysisProcessingInformation(dataSetAnalysis, ds, path)
                     if (info.length > 3) {
-                        String user = info[3];
-                        api.setExecutingUser(user);
+                        String user = info[3]
+                        api.setExecutingUser(user)
                     }
                     synchronized (processInfo) {
-                        processInfo << api;
+                        processInfo << api
                     }
                 }
         }
@@ -479,84 +372,137 @@ public class RuntimeService {
             logger.postSometimesInfo("No process info objects could be matched for ${execCache.size()} lines in the cache file.")
             //TODO Possible input output directory mismatch or configuration error!
         }
-        processInfo.sort { AnalysisProcessingInformation p1, AnalysisProcessingInformation p2 -> p1.getExecPath().absolutePath.compareTo(p2.getExecPath().getAbsolutePath()); }
-        return processInfo;
+        processInfo.sort { AnalysisProcessingInformation p1, AnalysisProcessingInformation p2 -> p1.getExecPath().absolutePath.compareTo(p2.getExecPath().getAbsolutePath()) }
+        return processInfo
     }
 
-    public File getLogFileForJob(Job job) {
+    File getLogFileForJob(Job job) {
         //Returns the log files path of the job.
         Roddy.getJobManager().queryExtendedJobStateById([job.jobID]).get(job.jobID).logFile
     }
 
-    public boolean hasLogFileForJob(Job job) {
-        return getLogFileForJob(job) != null;
+    boolean hasLogFileForJob(Job job) {
+        return getLogFileForJob(job) != null
     }
 
-    public List<File> getAdditionalLogFilesForContext(ExecutionContext executionContext) {
-        File loggingDirectory = executionContext.getLoggingDirectory();
-        List<File> files = FileSystemAccessProvider.getInstance().listFilesInDirectory(loggingDirectory);
-        List<File> notUsed = executionContext.getLogFilesForExecutedJobs();
+    List<File> getAdditionalLogFilesForContext(ExecutionContext executionContext) {
+        File loggingDirectory = executionContext.getLoggingDirectory()
+        List<File> files = FileSystemAccessProvider.getInstance().listFilesInDirectory(loggingDirectory)
+        List<File> notUsed = executionContext.getLogFilesForExecutedJobs()
         for (File f : notUsed)
-            files.remove(f);
-        return files;
+            files.remove(f)
+        return files
     }
 
-    public List<File> getResultsFilesForDataSetAndAnalysis(DataSet dataSet, Analysis analysis) {
-        File outFolder = getOutputFolderForDataSetAndAnalysis(dataSet, analysis);
-        return [];
+
+    private static ConfigurationValue getInputBaseDirectoryCV(Configuration configuration) {
+        ConfigurationValue inputBaseDirectory = configuration.getConfigurationValues().
+                get(ConfigurationConstants.CFG_INPUT_BASE_DIRECTORY)
+        if (inputBaseDirectory.toString() == "")
+            throw new ConfigurationError("${ConfigurationConstants.CFG_INPUT_BASE_DIRECTORY} not set. Consider --useiodir command-line option.",
+                    configuration, ConfigurationConstants.CFG_INPUT_BASE_DIRECTORY, null)
+        return inputBaseDirectory
     }
 
-    public File getInputFolderForAnalysis(Analysis analysis) {
-        return analysis.getConfiguration().getConfigurationValues().get(ConfigurationConstants.CFG_INPUT_BASE_DIRECTORY).toFile(analysis);
+    File getInputBaseDirectory(ExecutionContext context) {
+        return getInputBaseDirectoryCV(context.configuration).toFile(context)
     }
 
-    public File getOutputFolderForProject(ExecutionContext context) {
-        return context.getConfiguration().getConfigurationValues().get(ConfigurationConstants.CFG_OUTPUT_BASE_DIRECTORY).toFile(context);
+    File getInputBaseDirectory(Analysis analysis) {
+        return getInputBaseDirectoryCV(analysis.configuration).toFile(analysis)
     }
 
-    public File getOutputFolderForAnalysis(Analysis analysis) {
-        return analysis.getConfiguration().getConfigurationValues().get(ConfigurationConstants.CFG_OUTPUT_BASE_DIRECTORY).toFile(analysis);
+    File getInputBaseDirectory(DataSet dataset, Analysis analysis) {
+        return getInputBaseDirectoryCV(analysis.configuration).toFile(analysis, dataset)
     }
 
-    public File getInputFolderForDataSetAndAnalysis(DataSet dataSet, Analysis analysis) {
-        File analysisInFolder = new File(getInputFolderForAnalysis(analysis).absolutePath + FileSystemAccessProvider.instance.getPathSeparator() + dataSet.getId());
-        return analysisInFolder;
+    File getInputAnalysisBaseDirectory(DataSet dataSet, Analysis analysis) {
+        // The default value was set to a value resulting in the same results as the previous version of this method, even if the
+        // new inputAnalysisBaseDirectory variable is not defined.
+        return analysis.getConfiguration().getConfigurationValues().
+                get(ConfigurationConstants.CFG_INPUT_ANALYSIS_BASE_DIRECTORY,
+                        "\${${ConfigurationConstants.CFG_INPUT_BASE_DIRECTORY}}/\${${Constants.DATASET}}").
+                toFile(analysis, dataSet)
     }
 
-    public File getOutputFolderForDataSetAndAnalysis(DataSet dataSet, Analysis analysis) {
-        getOutputFolderForAnalysis(analysis);
-        File analysisOutFolder = analysis.getConfiguration().getConfigurationValues().get(ConfigurationConstants.CFG_OUTPUT_ANALYSIS_BASE_DIRECTORY).toFile(analysis, dataSet);
-        return analysisOutFolder;
+    File getInputAnalysisBaseDirectory(ExecutionContext context) {
+        return getInputAnalysisBaseDirectory(context.dataSet, context.analysis)
     }
 
-    public File getAnalysisToolsDirectory(ExecutionContext executionContext) {
-        File analysisToolsDirectory = new File(getExecutionDirectory(executionContext), DIRNAME_ANALYSIS_TOOLS);
-        return analysisToolsDirectory;
+
+
+    private static ConfigurationValue getOutputBaseDirectoryCV(Configuration configuration) {
+        ConfigurationValue outputBaseDirectory = configuration.getConfigurationValues().
+                get(ConfigurationConstants.CFG_OUTPUT_BASE_DIRECTORY)
+        if (outputBaseDirectory.toString() == "")
+            throw new ConfigurationError("${ConfigurationConstants.CFG_OUTPUT_BASE_DIRECTORY} not set. Consider --useiodir command-line option.",
+                    configuration, ConfigurationConstants.CFG_OUTPUT_BASE_DIRECTORY, null)
+        return outputBaseDirectory
     }
 
-    public Map<String, Object> getDefaultJobParameters(ExecutionContext context, String TOOLID) {
-        def fs = context.getRuntimeService();
-        //File cf = fs..createTemporaryConfigurationFile(executionContext);
+    File getOutputBaseDirectory(ExecutionContext context) {
+        return getOutputBaseDirectoryCV(context.configuration).toFile(context)
+    }
+
+    File getOutputBaseDirectory(Analysis analysis) {
+        return getOutputBaseDirectoryCV(analysis.configuration).toFile(analysis)
+    }
+
+    File getOutputBaseDirectory(DataSet dataSet, Analysis analysis) {
+        return getOutputBaseDirectoryCV(analysis.configuration).toFile(analysis, dataSet)
+    }
+
+    /** Get the value of the outputAnalysisBaseDirectory variable given the ExecutionContext. If that variable is not defined fall back to
+     *  outputBaseDirectory. In both cases context variables (e.g. "${dataset}") are substituted if possible.
+     *
+     * @param context
+     * @return
+     */
+    private ConfigurationValue getOutputAnalysisBaseCV(Analysis analysis) {
+        return analysis.getConfiguration().getConfigurationValues().
+                get(ConfigurationConstants.CFG_OUTPUT_ANALYSIS_BASE_DIRECTORY,
+                        getOutputBaseDirectory(analysis).toString())
+    }
+
+    File getOutputAnalysisBaseDirectory(DataSet dataSet, Analysis analysis) {
+        return getOutputAnalysisBaseCV(analysis).toFile(analysis, dataSet)
+    }
+
+    File getOutputAnalysisBaseDirectory(ExecutionContext context) {
+        return getOutputAnalysisBaseDirectory(context.dataSet, context.analysis)
+    }
+
+
+
+
+    File getAnalysisToolsDirectory(ExecutionContext executionContext) {
+        File analysisToolsDirectory = new File(getExecutionDirectory(executionContext), DIRNAME_ANALYSIS_TOOLS)
+        return analysisToolsDirectory
+    }
+
+    Map<String, Object> getDefaultJobParameters(ExecutionContext context, String TOOLID) {
         String dataset = context.getDataSet().toString()
         Map<String, Object> parameters = [
                 (Constants.PID)          : (Object) dataset,
                 (Constants.PID_CAP)      : dataset,
+                (Constants.DATASET)      : dataset,
+                (Constants.DATASET_CAP)  : dataset,
                 (Constants.ANALYSIS_DIR) : context.getOutputDirectory().getParentFile().getParent()
         ]
-        return parameters;
+        return parameters
     }
 
-    public String createJobName(ExecutionContext executionContext, BaseFile bf, String TOOLID, boolean reduceLevel) {
+    String createJobName(ExecutionContext executionContext, BaseFile bf, String TOOLID, boolean reduceLevel) {
         return _createJobName(executionContext, bf, TOOLID, reduceLevel)
     }
 
-    public static String _createJobName(ExecutionContext executionContext, BaseFile bf, String TOOLID, boolean reduceLevel) {
-        ExecutionContext rp = bf.getExecutionContext();
-        String runtime = rp.getTimestampString();
+    static String _createJobName(ExecutionContext executionContext, BaseFile bf, String TOOLID, boolean reduceLevel) {
+        ExecutionContext rp = bf.getExecutionContext()
+        String runtime = rp.getTimestampString()
         String pid = rp.getDataSet().getId()
-        StringBuilder sb = new StringBuilder();
-        sb.append("r").append(runtime).append("_").append(pid).append("_").append(TOOLID);
-        return sb.toString();
+        StringBuilder sb = new StringBuilder()
+        sb.append("r").append(runtime).append("_").append(pid).append("_").append(TOOLID)
+        return sb.toString()
     }
 
     /**
@@ -570,54 +516,54 @@ public class RuntimeService {
      *   <li>it can be validated (i.e. by its size or files, but not with a lengthy operation!)</li>
      * </ul>
      */
-    public boolean isFileValid(BaseFile baseFile) {
+    boolean isFileValid(BaseFile baseFile) {
 
         //Parents valid?
-        boolean parentsValid = true;
+        boolean parentsValid = true
         for (BaseFile bf in baseFile.parentFiles) {
-            if (bf.isTemporaryFile()) continue; //We do not check the existence of parent files which are temporary.
-            if (bf.isSourceFile()) continue;
+            if (bf.isTemporaryFile()) continue //We do not check the existence of parent files which are temporary.
+            if (bf.isSourceFile()) continue
             if (!bf.isFileValid()) {
-                return false;
+                return false
             }
         }
 
-        boolean result = true;
+        boolean result = true
 
         //Source files should be marked as such and checked in a different way. They are assumed to be valid.
         if (baseFile.isSourceFile())
-            return true;
+            return true
 
         //Temporary files are also considered as valid.
         if (baseFile.isTemporaryFile())
-            return true;
+            return true
 
         try {
             //Was freshly created?
             if (baseFile.creatingJobsResult != null && baseFile.creatingJobsResult.successful) {
-                result = false;
+                result = false
             }
         } catch (Exception ex) {
-            result = false;
+            result = false
         }
 
         try {
             //Does it exist and is it readable?
             if (result && !baseFile.isFileReadable()) {
-                result = false;
+                result = false
             }
         } catch (Exception ex) {
-            result = false;
+            result = false
         }
 
         try {
             //Can it be validated?
             //TODO basefiles are always validated!
             if (result && !baseFile.checkFileValidity()) {
-                result = false;
+                result = false
             }
         } catch (Exception ex) {
-            result = false;
+            result = false
         }
 
         // TODO? If the file is not valid then also temporary parent files should be invalidated! Or at least checked.
@@ -625,7 +571,7 @@ public class RuntimeService {
             // Something is missing here! Michael?
         }
 
-        return result;
+        return result
     }
 
     @Deprecated
@@ -635,7 +581,7 @@ public class RuntimeService {
     boolean initialize() {}
 
     @Deprecated
-    public void destroy() {
+    void destroy() {
     }
 
     String calculateAutoCheckpointFilename(ToolEntry toolEntry, List<Object> parameters) {

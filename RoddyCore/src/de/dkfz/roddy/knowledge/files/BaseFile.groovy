@@ -6,7 +6,6 @@
 
 package de.dkfz.roddy.knowledge.files
 
-import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.config.Configuration
 import de.dkfz.roddy.config.ConfigurationError
 import de.dkfz.roddy.config.DerivedFromFilenamePattern
@@ -21,16 +20,10 @@ import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ExecutionContextLevel
 import de.dkfz.roddy.core.Workflow
 import de.dkfz.roddy.execution.UnexpectedExecutionResultException
-import de.dkfz.roddy.execution.io.ExecutionResult
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.execution.jobs.BEJob
 import de.dkfz.roddy.execution.jobs.BEJobResult
-import de.dkfz.roddy.execution.jobs.Command
-import de.dkfz.roddy.execution.jobs.Job
-import de.dkfz.roddy.execution.jobs.JobManagerOptionsBuilder
-import de.dkfz.roddy.execution.jobs.direct.synchronousexecution.DirectCommand
-import de.dkfz.roddy.execution.jobs.direct.synchronousexecution.DirectSynchronousExecutionJobManager
 import de.dkfz.roddy.plugins.LibrariesFactory
 import de.dkfz.roddy.tools.LoggerWrapper
 import de.dkfz.roddy.tools.RoddyConversionHelperMethods
@@ -229,7 +222,8 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      */
     static BaseFile getFile(BaseFile parentFile, String _class = STANDARD_FILE_CLASS) {
         if (RoddyConversionHelperMethods.isNullOrEmpty(_class)) _class = STANDARD_FILE_CLASS
-        return constructManual(_class as Class<? extends BaseFile>, parentFile)
+        Class<BaseFile> fileClass = LibrariesFactory.getInstance().loadRealOrSyntheticClass(_class, BaseFile as Class<FileObject>) as Class<BaseFile>
+        return constructManual(fileClass, parentFile)
     }
 
     /**
@@ -248,7 +242,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      *  If the command could not get successfully executed an ExecutionException is propagated. */
     static BaseFile getSourceFileUsingTool(ExecutionContext context, String toolID, String _class = STANDARD_FILE_CLASS)
         throws UnexpectedExecutionResultException, ExecutionException {
-        List<String> executionOutput = ExecutionService.instance.callSynchronized(context, toolID)
+        List<String> executionOutput = ExecutionService.instance.runDirect(context, toolID)
         if (executionOutput.size() != 1) {
             throw new UnexpectedExecutionResultException("SourceFile instantiation from tool output failed", executionOutput)
         } else {
@@ -260,7 +254,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      *  The tool should return an arbitary number of lines with filenames. If no line is returned, an empty list is returned. */
     static List<BaseFile> getSourceFilesUsingTool(ExecutionContext context, String toolID, String _class = STANDARD_FILE_CLASS)
         throws ExecutionException {
-        return ExecutionService.instance.callSynchronized(context, toolID).collect {
+        return ExecutionService.instance.runDirect(context, toolID).collect {
             getSourceFile(context, it, _class)
         } as List<BaseFile>
     }
@@ -323,10 +317,10 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
             ConstructionHelperForGenericCreation _helper = helper as ConstructionHelperForGenericCreation;
             if (_helper.parentObject instanceof FileGroup) {
                 parentFiles.addAll((_helper.parentObject as FileGroup).getFilesInGroup());
-                this.fileStageSettings = _helper.fileStageSettings
+                this.fileStageSettings = (FS) _helper.fileStageSettings
             } else if (_helper.parentObject instanceof BaseFile) {
                 parentFiles.add(_helper.parentObject as BaseFile);
-                this.fileStageSettings = _helper.fileStageSettings ?: (FS) (_helper.parentObject as BaseFile)?.fileStageSettings ?: null;
+                this.fileStageSettings = (FS) (_helper.fileStageSettings ?: (_helper.parentObject as BaseFile)?.fileStageSettings ?: null);
             }
             Tuple2<File, FilenamePattern> fnresult = getFilename(this, _helper.selectionTag);
             if (fnresult) {
@@ -336,7 +330,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
         } else if (helper instanceof ConstructionHelperForSourceFiles) {
             ConstructionHelperForSourceFiles _helper = helper as ConstructionHelperForSourceFiles;
 
-            this.fileStageSettings = _helper.fileStageSettings;
+            this.fileStageSettings = (FS) _helper.fileStageSettings;
             this.path = _helper.getPath();
             setAsSourceFile();
         } else {
@@ -659,7 +653,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
 
                 sb << ["The following patterns are available for this file class:\n"]
                 sb << availablePatterns.findAll { it }.collect {
-                    FilenamePatternDependency k, List v ->
+                    FilenamePatternDependency k, List<FilenamePattern> v ->
                         v.collect {
                             FilenamePattern value ->
                                 "${k.name()} : ${value}"
@@ -669,7 +663,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
                 throw new ConfigurationError(sb.toString(), baseFile.executionContext.configuration);
             } else {
                 //Check if the path exists and create it if necessary.
-                if (context.getExecutionContextLevel().isOrWasAllowedToSubmitJobs && !FileSystemAccessProvider.getInstance().checkDirectory(patternResult.x.getParentFile(), context, true)) {
+                if (context.getExecutionContextLevel().allowedToSubmitJobs && !FileSystemAccessProvider.getInstance().checkDirectory(patternResult.x.getParentFile(), context, true)) {
                     throw new IOException("Output path could not be created for file: " + baseFile);
                 }
             }

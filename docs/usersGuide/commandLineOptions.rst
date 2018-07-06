@@ -36,7 +36,7 @@ If you do not intend to develop Roddy or Roddy plugins, you can stop reading aft
 == Advanced developer options ==
 
 compile         ,                                  , Compiles the roddy library / application.
-  pack          ,                                  ,Creates a copy of the 'develop' version and puts the version number to the file name.
+  pack          ,                                  , Creates a copy of the 'develop' version and puts the version number to the file name.
   compileplugin , (plugin ID) [--useconfig={file}] , Compiles a plugin .
 
   packplugin    , (plugin ID) [--useconfig={file}] , Packages the compiled plugin in dist/plugins and creates a version number for it. Please note that you can indeed override contents of a zip file if you do not update / compile the plugin jar!

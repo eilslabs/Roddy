@@ -81,7 +81,7 @@ public class FXDataSetWrapper implements Comparable<FXDataSetWrapper> {
 //            DataSet ds = dataSet;
 //            Analysis analysis = getAnalysis();
 //            Workflow workflow = analysis.getWorkflow();
-//            isExecutable = workflow.checkExecutability(new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), analysis, ds, ExecutionContextLevel.QUERY_STATUS, ds.getOutputFolderForAnalysis(analysis), ds.getInputFolderForAnalysis(analysis), null, -1, true));
+//            isExecutable = workflow.checkExecutability(new ExecutionContext(FileSystemAccessProvider.getInstance().callWhoAmI(), analysis, ds, ExecutionContextLevel.QUERY_STATUS, ds.getOutputFolder(analysis), ds.getInputBaseDirectory(analysis), null, -1, true));
 //        }
 //        return isExecutable;
 //    }
