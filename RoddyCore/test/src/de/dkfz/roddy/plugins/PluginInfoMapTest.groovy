@@ -6,9 +6,7 @@
 
 package de.dkfz.roddy.plugins;
 
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.junit.Test
 
 /**
  * Created by heinold on 27.06.16.
@@ -42,7 +40,7 @@ public class PluginInfoMapTest {
         PluginInfoMap pim = assemblePluginInfoMap();
         assert null != pim.getPluginInfoWithPluginString("BasePlugin:1.0.1")
         assert null != pim.getPluginInfoWithPluginString("BasePlugin:develop")
-        assert null != pim.getPluginInfoWithPluginString("BasePlugin") && pim.getPluginInfoWithPluginString("BasePlugin").getProdVersion() == "develop"
+        assert null != pim.getPluginInfoWithPluginString("BasePlugin") && pim.getPluginInfoWithPluginString("BasePlugin").version.toString() == "develop"
     }
 
     @Test(expected = PluginLoaderException)
@@ -64,7 +62,7 @@ public class PluginInfoMapTest {
         assert null != pim.getPluginInfo("BasePlugin", "1.0.2")
         assert null != pim.getPluginInfo("BasePlugin", "develop")
         assert null != pim.getPluginInfo("BasePlugin", null)
-        assert pim.getPluginInfo("BasePlugin", null).getProdVersion() == "develop"
+        assert pim.getPluginInfo("BasePlugin", null).version.toString() == "develop"
     }
 
     @Test

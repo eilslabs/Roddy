@@ -10,6 +10,7 @@ import de.dkfz.roddy.AvailableClusterSystems
 import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.core.ContextResource
 import de.dkfz.roddy.core.RuntimeService
+import de.dkfz.roddy.core.VersionWithDevelop
 import de.dkfz.roddy.knowledge.nativeworkflows.NativeWorkflowConverter
 import groovy.transform.CompileStatic
 import org.junit.BeforeClass
@@ -65,11 +66,11 @@ class NativePluginInfoTest {
     }
 
     NativePluginInfo getPluginInfoIncomplete() {
-        return new NativePluginInfo("PluginIncomplete", pluginDirIncomplete, "1.0.0", null)
+        return new NativePluginInfo("PluginIncomplete", pluginDirIncomplete, VersionWithDevelop.fromString("1.0.0"), null)
     }
 
     NativePluginInfo getPluginInfoComplete() {
-        return new NativePluginInfo(PLUGIN_COMPLETE, pluginDirComplete, "1.0.0", null)
+        return new NativePluginInfo(PLUGIN_COMPLETE, pluginDirComplete, VersionWithDevelop.fromString("1.0.0"), null)
     }
 
     @Test

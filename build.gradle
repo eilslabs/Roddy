@@ -145,6 +145,7 @@ dependencies {
     // Testing libraries
     testCompile 'junit:junit:4.12'                              // EPL 1.0
     testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'  // Apache 2.0
+    testCompile 'com.nagternal:spock-genesis:0.6.0'             // MIT
 }
 
 project.ext.developmentDistributionDir = new File(rootProject.projectDir, "dist/bin/develop")

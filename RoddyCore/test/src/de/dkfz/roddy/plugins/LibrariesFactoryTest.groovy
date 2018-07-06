@@ -17,7 +17,6 @@ import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.LocalExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
 import de.dkfz.roddy.tools.RoddyIOHelperMethods
-import de.dkfz.roddy.tools.RuntimeTools
 import groovy.transform.TypeCheckingMode
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -186,13 +185,13 @@ public class LibrariesFactoryTest {
         ["A", "B"].each { String pID ->
             File pFolder = RoddyIOHelperMethods.assembleLocalPath(pluginsBaseDirForResourceTests.root, pID)
             ["toolDirA", "toolDirB", "toolDirC"].each { RoddyIOHelperMethods.assembleLocalPath(pFolder, RuntimeService.DIRNAME_RESOURCES, RuntimeService.DIRNAME_ANALYSIS_TOOLS, it).mkdirs() }
-            pluginInfoObjectsForResourceTests[pID] = new PluginInfo(pID, null, pFolder, null, null, null, null, null)
+            pluginInfoObjectsForResourceTests[pID] = new PluginInfo(pID, null, pFolder, null, "develop", null, null, null)
         }
 
         ["C", "D"].each { String pID ->
             File pFolder = RoddyIOHelperMethods.assembleLocalPath(pluginsBaseDirForResourceTests.root, pID)
             ["toolDirD", "toolDirE", "toolDirF"].each { RoddyIOHelperMethods.assembleLocalPath(pFolder, RuntimeService.DIRNAME_RESOURCES, RuntimeService.DIRNAME_ANALYSIS_TOOLS, it).mkdirs() }
-            pluginInfoObjectsForResourceTests[pID] = new PluginInfo(pID, null, pFolder, null, null, null, null, null)
+            pluginInfoObjectsForResourceTests[pID] = new PluginInfo(pID, null, pFolder, null, "develop", null, null, null)
         }
     }
 
@@ -203,7 +202,7 @@ public class LibrariesFactoryTest {
             pluginDirectories += [new File(Roddy.getApplicationDirectory(), "/dist/plugins/")]
 
         // Invoke the method and check the results.
-        return LibrariesFactory.loadPluginsFromDirectories(LibrariesFactory.loadMapOfAvailablePlugins(pluginDirectories))
+        return LibrariesFactory.loadPluginsFromDirectories(LibrariesFactory.loadAvailablePluginDirectories(pluginDirectories))
     }
 
     @Test
@@ -224,13 +223,13 @@ public class LibrariesFactoryTest {
 
     @Test
     public void testPerformIncompatibleAPIChecks() {
-        assert false == LibrariesFactory.performAPIChecks([
+        assert !LibrariesFactory.performAPIChecks([
                 new PluginInfo("MasterMax", null, null, null, "1.0.10-0", "000", "1.3", null),
                 new PluginInfo("MasterMax", null, null, null, "1.0.10-0", "1.3", "1.3", null)])
-        assert false == LibrariesFactory.performAPIChecks([
+        assert !LibrariesFactory.performAPIChecks([
                 new PluginInfo("MasterMax", null, null, null, "1.0.10-0", "1.3", "000", null),
                 new PluginInfo("MasterMax", null, null, null, "1.0.10-0", "1.3", "1.3", null)])
-        assert false == LibrariesFactory.performAPIChecks([
+        assert !LibrariesFactory.performAPIChecks([
                 new PluginInfo("MasterMax", null, null, null, "1.0.10-0", "1.3", "1.3", null),
                 new PluginInfo("MasterMax", null, null, null, "1.0.10-0", "1.3", "1.3", null)])
 
@@ -242,12 +241,12 @@ public class LibrariesFactoryTest {
         // Validate if all to-be-loaded versions are properly found.
         Map<String, PluginInfo> pluginQueueOK = LibrariesFactory.buildupPluginQueue(mapOfAvailablePlugins, ["D:1.0.2-1"] as String[]);
         assert pluginQueueOK != null;
-        assert pluginQueueOK["D"].prodVersion == "1.0.2-1" &&
-                pluginQueueOK["C"].prodVersion == "1.0.2-0" &&
-                pluginQueueOK["B"].prodVersion == "1.0.3-0" &&
-                pluginQueueOK["A"].prodVersion == "current" &&
-                pluginQueueOK["PluginBase"].prodVersion == "current" &&
-                pluginQueueOK["DefaultPlugin"].prodVersion == "current";
+        assert pluginQueueOK["D"].version.toString() == "1.0.2-1" &&
+                pluginQueueOK["C"].version.toString() == "1.0.2-0" &&
+                pluginQueueOK["B"].version.toString() == "1.0.3-0" &&
+                pluginQueueOK["A"].version.toString() == "current" &&
+                pluginQueueOK["PluginBase"].version.toString() == "current" &&
+                pluginQueueOK["DefaultPlugin"].version.toString() == "current";
 
     }
 
@@ -262,12 +261,12 @@ public class LibrariesFactoryTest {
     public void testBuildupPluginQueueContainingCompatibleEntries() {
         Map<String, PluginInfo> pluginQueueCompatible = LibrariesFactory.buildupPluginQueue(mapOfAvailablePlugins, ["D:1.0.3"] as String[]);
         assert pluginQueueCompatible != null;
-        assert pluginQueueCompatible["D"].prodVersion == "1.0.3-0";
-        assert pluginQueueCompatible["C"].prodVersion == "current";
-        assert pluginQueueCompatible["B"].prodVersion == "1.0.3-0";
-        assert pluginQueueCompatible["A"].prodVersion == "current";
-        assert pluginQueueCompatible["PluginBase"].prodVersion == "current";
-        assert pluginQueueCompatible["DefaultPlugin"].prodVersion == "current";
+        assert pluginQueueCompatible["D"].version.toString() == "1.0.3-0"
+        assert pluginQueueCompatible["C"].version.toString() == "develop"
+        assert pluginQueueCompatible["B"].version.toString() == "1.0.3-0"
+        assert pluginQueueCompatible["A"].version.toString() == "develop"
+        assert pluginQueueCompatible["PluginBase"].version.toString() == "develop"
+        assert pluginQueueCompatible["DefaultPlugin"].version.toString() == "develop"
 
     }
 
@@ -282,12 +281,12 @@ public class LibrariesFactoryTest {
     public void testBuildupValidPluginQueueWithFixatedEntries() {
         Map<String, PluginInfo> pluginQueueFixatedEntriesOK = LibrariesFactory.buildupPluginQueue(mapOfAvailablePlugins, ["D:1.0.2-1", "C:1.0.2", "B:1.0.2-1"] as String[]);
         assert pluginQueueFixatedEntriesOK != null;
-        assert pluginQueueFixatedEntriesOK["D"].prodVersion == "1.0.2-1" &&
-                pluginQueueFixatedEntriesOK["C"].prodVersion == "1.0.2-0" &&
-                pluginQueueFixatedEntriesOK["B"].prodVersion == "1.0.2-1" &&
-                pluginQueueFixatedEntriesOK["A"].prodVersion == "1.0.24-0" &&
-                pluginQueueFixatedEntriesOK["PluginBase"].prodVersion == "current" &&
-                pluginQueueFixatedEntriesOK["DefaultPlugin"].prodVersion == "current";
+        assert pluginQueueFixatedEntriesOK["D"].version.toString() == "1.0.2-1" &&
+                pluginQueueFixatedEntriesOK["C"].version.toString() == "1.0.2-0" &&
+                pluginQueueFixatedEntriesOK["B"].version.toString() == "1.0.2-1" &&
+                pluginQueueFixatedEntriesOK["A"].version.toString() == "1.0.24-0" &&
+                pluginQueueFixatedEntriesOK["PluginBase"].version.toString() == "develop" &&
+                pluginQueueFixatedEntriesOK["DefaultPlugin"].version.toString() == "develop"
 
     }
 
@@ -295,8 +294,8 @@ public class LibrariesFactoryTest {
     public void testBuildupValidPluginQueueWithMissingDefaultLibraryEntries() {
         Map<String, PluginInfo> pluginQueueWODefaultLibs = LibrariesFactory.buildupPluginQueue(mapOfAvailablePlugins, ["D:0.9.0"] as String[]);
         assert pluginQueueWODefaultLibs != null;
-        assert pluginQueueWODefaultLibs["PluginBase"].prodVersion == "current" &&
-                pluginQueueWODefaultLibs["DefaultPlugin"].prodVersion == "current";
+        assert pluginQueueWODefaultLibs["PluginBase"].version.toString() == "develop" &&
+                pluginQueueWODefaultLibs["DefaultPlugin"].version.toString() == "develop";
     }
 
     @Test

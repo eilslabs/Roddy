@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.plugins
 
+import de.dkfz.roddy.core.VersionWithDevelop
 import de.dkfz.roddy.tools.RuntimeTools
 import groovy.transform.CompileStatic
 
@@ -20,10 +21,9 @@ class SyntheticPluginInfo extends PluginInfo {
     public static final String SYNTHETIC_PACKAGE = "de.dkfz.roddy.synthetic.files"
 
 
-    SyntheticPluginInfo(String name, File zipFile, File directory, File developmentDirectory, String prodVersion, Map<String, String> dependencies)
+    SyntheticPluginInfo(String name, File zipFile, File directory, File developmentDirectory, VersionWithDevelop prodVersion, Map<String, String> dependencies)
         throws IOException {
-        super(name, zipFile, directory, developmentDirectory, prodVersion, RuntimeTools.getRoddyRuntimeVersion(),
-                RuntimeTools.getJavaRuntimeVersion(), dependencies)
+        super(name, zipFile, directory, developmentDirectory, prodVersion, RuntimeTools.getRoddyRuntimeVersion(), dependencies)
     }
 
     final Map<String, Class> map = [:]

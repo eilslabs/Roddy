@@ -8,6 +8,11 @@ package de.dkfz.roddy.plugins
 
 import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.StringConstants
+import de.dkfz.roddy.core.VersionWithDevelop
+import de.dkfz.roddy.tools.LoggerWrapper
+import de.dkfz.roddy.tools.Tuple2
+
+import java.text.ParseException
 
 /**
  * A container / map for loaded / available plugins found by e.g. librariesFactory.loadMapOfAvailablePluginsForInstance();
@@ -16,6 +21,8 @@ import de.dkfz.roddy.StringConstants
  */
 @groovy.transform.CompileStatic
 class PluginInfoMap {
+
+    private static LoggerWrapper logger = LoggerWrapper.getLogger(LibrariesFactory.class.getSimpleName())
 
     /**
      * A map stuffed with (detected) PluginInfo object.
@@ -56,13 +63,12 @@ class PluginInfoMap {
      *
      * If no plugin is set "develop" will be returned.
      */
-    public PluginInfo getPluginInfoWithPluginString(String pluginString) {
-        String[] split = pluginString.split(StringConstants.SPLIT_COLON);
-        if (split.size() > 2)
-            throw new RuntimeException("The plugin string ${pluginString} is malformed.")
-        String pluginID = split[0];
-        String pluginVersion = split.size() > 1 ? split[1] : "develop";
-        return getPluginInfo(pluginID, pluginVersion);
+    PluginInfo getPluginInfoWithPluginString(String pluginString) {
+        return LibrariesFactory.parseCandidatePluginString(pluginString).map { pluginStringData ->
+            getPluginInfo(pluginStringData.x, pluginStringData.y.toString())
+        }.orElse {
+            throw new ParseException("Could not parse plugin data from '$pluginString'", 0)
+        } as PluginInfo
     }
 
     /**

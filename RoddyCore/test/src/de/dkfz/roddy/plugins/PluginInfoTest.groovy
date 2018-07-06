@@ -8,6 +8,7 @@ package de.dkfz.roddy.plugins
 
 import de.dkfz.roddy.core.ContextResource
 import de.dkfz.roddy.core.RuntimeService
+import de.dkfz.roddy.core.VersionWithDevelop
 import de.dkfz.roddy.tools.RoddyIOHelperMethods
 import org.junit.BeforeClass
 
@@ -37,10 +38,12 @@ class PluginInfoTest extends GroovyTestCase {
     }
 
     void testConstructionWithValidDirectoryEntries() {
-        new PluginInfo("Valid", null, validPlugin, null, null, null, null, null)
+        new PluginInfo("Valid", null, validPlugin, null,
+                VersionWithDevelop.developString, null, null, null)
     }
 
     void testConstructionWithInvalidContents() {
-        new PluginInfo("Invalid", null, badPlugin, null, null, null, null, null)
+        new PluginInfo("Invalid", null, badPlugin, null,
+                VersionWithDevelop.developString, null, null, null)
     }
 }

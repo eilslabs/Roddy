@@ -8,13 +8,14 @@ package de.dkfz.roddy.plugins
 
 import groovy.transform.CompileStatic
 import org.junit.Test
+import spock.lang.Specification
 
 /**
  * Test class for the BuildInfoFile Helper class
  * Created by heinold on 01.03.16.
  */
 @CompileStatic
-class BuildInfoFileHelperTest {
+class BuildInfoFileTest extends Specification {
 
     static BuildInfoFileHelper setupValidHelperObject() {
         List<String> entries = [

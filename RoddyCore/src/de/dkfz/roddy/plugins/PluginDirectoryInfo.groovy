@@ -7,6 +7,7 @@
 package de.dkfz.roddy.plugins
 
 import de.dkfz.roddy.StringConstants
+import de.dkfz.roddy.core.VersionWithDevelop
 import groovy.transform.CompileStatic
 
 /**
@@ -18,17 +19,17 @@ class PluginDirectoryInfo {
 
     final File directory
 
-    final String pluginID
+    final String pluginName
 
-    final String version
+    final VersionWithDevelop version
 
     final PluginType type
 
     PluginDirectoryInfo(File file, PluginType pluginType) {
         String[] splitName = file.name.split(StringConstants.SPLIT_UNDERSCORE) // Split name and version
         directory = file
-        pluginID = splitName[0]
-        version = splitName.size() > 1 ? splitName[1] : LibrariesFactory.PLUGIN_VERSION_DEVELOP
+        pluginName = splitName[0]
+        version = VersionWithDevelop.fromString(splitName.size() > 1 ? splitName[1] : LibrariesFactory.PLUGIN_VERSION_DEVELOP)
         type = pluginType
     }
 
@@ -37,4 +38,5 @@ class PluginDirectoryInfo {
     boolean needsBuildInfoFile() {
         return type.needsBuildInfoFile
     }
+
 }

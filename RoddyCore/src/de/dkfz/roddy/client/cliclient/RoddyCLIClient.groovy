@@ -178,10 +178,10 @@ public class RoddyCLIClient {
     public static void showPluginInfo(CommandLineCall clc) {
 //        Map<String, Map<String, PluginInfo>> listOfInfos = LibrariesFactory.getInstance().getLoadedPlugins();
 //        listOfInfos.each {
-//            String pluginID, Map<String, PluginInfo> pluginMap ->
+//            String pluginName, Map<String, PluginInfo> pluginMap ->
 //
 //                StringBuilder sb = new StringBuilder();
-//                sb << "Plugin: " << pluginID << NEWLINE;
+//                sb << "Plugin: " << pluginName << NEWLINE;
         //TODO Update to work again.
 //                sb << "Work directory: ".padLeft(25) << pluginInfo.directory << " [" << pluginInfo.prodVersion << "]" << NEWLINE;
 //                sb << "Dev directory: ".padLeft(25) << pluginInfo.developmentDirectory << " [" << pluginInfo.devVersion << "]" << NEWLINE;

@@ -10,6 +10,7 @@ import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.client.RoddyStartupOptions
 import de.dkfz.roddy.config.converters.BashConverter
 import de.dkfz.roddy.config.loader.ConfigurationLoaderException
+import de.dkfz.roddy.core.VersionWithDevelop
 import de.dkfz.roddy.plugins.NativePluginInfo
 import de.dkfz.roddy.plugins.PluginLoaderException
 import de.dkfz.roddy.tools.LoggerWrapper
@@ -50,7 +51,7 @@ class NativeWorkflowConverter {
     static boolean isNativePlugin(File directory) {
         try {
             // Just create a dummy plugin info, try catch and return false on PluginLoaderException. Both methods trow this if something is bad..
-            def piTest = new NativePluginInfo("TEST", directory, "develop", null)
+            def piTest = new NativePluginInfo("TEST", directory, VersionWithDevelop.fromString("develop"), null)
             piTest.getSourceWorkflow()
             piTest.getSourceConfigurationFile()
             return true

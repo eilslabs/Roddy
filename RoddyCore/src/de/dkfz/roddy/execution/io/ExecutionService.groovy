@@ -692,7 +692,7 @@ abstract class ExecutionService implements BEExecutionService {
                 PluginInfo pInfo = listOfFolders[subFolder]
                 // Md5sum from tempFolder
                 String md5sum = RoddyIOHelperMethods.getSingleMD5OfFilesInDirectoryIncludingDirectoryNamesAndPermissions(subFolder)
-                String zipFilename = "cTools_${pInfo.getName()}:${pInfo.getProdVersion()}_${subFolder.getName()}.zip"
+                String zipFilename = "cTools_${pInfo.getName()}:${pInfo.version.toString()}_${subFolder.getName()}.zip"
                 String zipMD5Filename = zipFilename + "_contentmd5"
                 File tempFile = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipFilename)
                 File zipMD5File = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipMD5Filename)

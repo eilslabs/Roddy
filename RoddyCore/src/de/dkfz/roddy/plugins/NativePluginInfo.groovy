@@ -9,6 +9,7 @@ package de.dkfz.roddy.plugins
 import de.dkfz.roddy.AvailableClusterSystems
 import de.dkfz.roddy.Constants
 import de.dkfz.roddy.Roddy
+import de.dkfz.roddy.core.VersionWithDevelop
 import de.dkfz.roddy.knowledge.nativeworkflows.NativeWorkflowConverter
 import de.dkfz.roddy.tools.RuntimeTools
 import groovy.transform.CompileStatic
@@ -23,12 +24,8 @@ class NativePluginInfo extends PluginInfo {
 
     final File nativeSourceDirectory
 
-    NativePluginInfo(String name, File nativeSourceDirectory, String prodVersion, Map<String, String> dependencies) {
-        super(name,
-                null,
-                prodVersion,
-                Constants.UNKNOWN,
-                null, dependencies)
+    NativePluginInfo(String name, File nativeSourceDirectory, VersionWithDevelop version, Map<String, String> dependencies) {
+        super(name, null, version, Roddy.usedRoddyVersion, dependencies)
         this.nativeSourceDirectory = nativeSourceDirectory
         // Can't be passed into super() because nativeSourceDirectory is not set.
         this.directory = getConvertedPluginDirectory()
@@ -36,6 +33,12 @@ class NativePluginInfo extends PluginInfo {
         // Needs to be called a second time.
         fillListOfToolDirectories()
     }
+
+    @Override
+    boolean isCompatibleToRuntimeSystem() {
+        return true
+    }
+
 
     @Override
     protected void fillListOfToolDirectories() {
@@ -107,8 +110,4 @@ class NativePluginInfo extends PluginInfo {
         return getToolFileNames().collect { String filename -> filename.replaceAll("[.]", "_") }
     }
 
-    @Override
-    boolean isCompatibleToRuntimeSystem() {
-        return true
-    }
 }
