@@ -100,7 +100,7 @@ In this directory, create the file *NewWorkflow.java* and put in the following c
 
 The next step is the creation of your analysis XML file, which will make the workflow
 available to Roddy. If the XML file is setup properly, you can import the analysis in your
-project configuration or call it in configuration free mode.
+project configuration or call it in configuration-free mode.
 
 .. code-block:: bash
 
@@ -178,17 +178,26 @@ and uncomment the new jobManager.
 --------------
 
 The last step you need to do is to compile and run the script.
-We'll stick to the configuration free mode here. Project configuration
-files are explained in :doc:`../config/configurationFiles`. If you use
-a project configuration file, put in a directory of your choice (e.g.
-where you put your ini file from the step before).
 
 .. code-block:: Bash
 
     [RODDY_DIRECTORY]/roddy.sh compileplugin NewPlugin --c=[YOUR_INI_FILE]
 
-If you sticked to the example code, everything should be fine now and
-you can call it.
+If you stuck to the example code, everything should be fine now and
+you can call it. We'll use to the configurations-free mode here. Therefore
+we call the testrun mode with the pattern
+
+.. code-block:: Bash
+
+    [RODDY_DIRECTORY]/roddy.sh testrun [PluginName]_[PluginVersion]:[ConfigurationName]Analysis
+
+Note that the "ConfigurationName" is the name attribute in the workflow configuration
+in the plugin, however without the "Analysis" suffix. The suffix is re-added by Roddy.
+
+Project configuration files are explained in :doc:`../config/configurationFiles`.
+If you use a project configuration file, put in a directory of your choice (e.g.
+where you put your ini file from the step before).
+
 
 .. code-block:: Bash
 

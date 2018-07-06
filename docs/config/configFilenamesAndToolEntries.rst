@@ -285,6 +285,7 @@ syntax for input objects, so we'll skip explanations for known attributes. Valid
 - File groups with indices:
 
   .. code-block:: XML
+
       <output type="filegroup" passas="array" filename="somefile_${fgindex}.out" />
 
 

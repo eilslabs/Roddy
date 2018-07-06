@@ -1,5 +1,5 @@
-Roddy Configuration Options
-===========================
+Roddy Configuration Values
+==========================
 
 The following variables are used by Roddy itself:
 

@@ -256,6 +256,7 @@ idea {
 
 sphinx {
     sourceDirectory = "${project.projectDir}/docs/"
+    warningsAsErrors = true
 }
 
 // end of build.gradle
