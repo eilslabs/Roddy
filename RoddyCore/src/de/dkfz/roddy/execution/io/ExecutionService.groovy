@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 eilslabs.
+ * Copyright (c) 2018 German Cancer Research Center (DKFZ).
  *
  * Distributed under the MIT License (license terms are at https://www.github.com/eilslabs/Roddy/LICENSE.txt).
  */
@@ -623,10 +623,10 @@ abstract class ExecutionService implements BEExecutionService {
         long startParallelCompression = System.nanoTime()
 
         // Check and override the listOfFolders, eventually create new temporary folders, if inline scripts are used
-        listOfFolders = writeInlineScriptsAndCorrectListOfFolders(listOfFolders, mapOfInlineScripts)
+        listOfFolders = persistInlineScriptsAndAssembleFinalListOfToolFolders(listOfFolders, mapOfInlineScripts)
 
         // Compress the new (or old) folder list.
-        compressToolFolders(listOfFolders, mapOfInlineScripts)
+        compressToolFolders(listOfFolders)
         logger.postRareInfo("Overall tool compression took ${(System.nanoTime() - startParallelCompression) / 1000000} ms.")
 
         // Now check if the local file with its md5 sum exists on the remote site.
@@ -636,7 +636,7 @@ abstract class ExecutionService implements BEExecutionService {
     }
 
     /**
-     * Add inline scripts and compress existing tool folders to a central location and generate some md5 sums for them.
+     * Persist inline scripts to a file and compress existing tool folders to a central location and generate some md5 sums for them.
      *
      * 1. Create a new temp folder
      * 2.a If there are inline scripts in the folder:
@@ -648,7 +648,7 @@ abstract class ExecutionService implements BEExecutionService {
      * @param listOfFolders
      * @param mapOfInlineScriptsBySubfolder - Map<SubfolderName,ScriptName>
      */
-    Map<File, PluginInfo> writeInlineScriptsAndCorrectListOfFolders(Map<File, PluginInfo> listOfFolders, Map<String, List<Map<String, String>>> mapOfInlineScriptsBySubfolder) {
+    Map<File, PluginInfo> persistInlineScriptsAndAssembleFinalListOfToolFolders(Map<File, PluginInfo> listOfFolders, Map<String, List<Map<String, String>>> mapOfInlineScriptsBySubfolder) {
 
         Map<File, PluginInfo> correctedListOfFolders = [:]
 
@@ -687,37 +687,54 @@ abstract class ExecutionService implements BEExecutionService {
      * @param listOfFolders
      * @param mapOfInlineScriptsBySubfolder
      */
-    void compressToolFolders(Map<File, PluginInfo> listOfFolders, Map<String, List<Map<String, String>>> mapOfInlineScriptsBySubfolder) {
+    void compressToolFolders(Map<File, PluginInfo> listOfFolders) {
         listOfFolders.keySet().parallelStream().each {
-            File subFolder ->
-                long startSingleCompression = System.nanoTime()
+            File folder ->
+                PluginInfo pInfo = listOfFolders[folder]
+                CompressedArchiveInfo archiveInfo = compressToolFolder(folder, pInfo)
+                validateCompressedArchiveOrFail(archiveInfo)
+        }
+    }
 
-                PluginInfo pInfo = listOfFolders[subFolder]
-                // Md5sum from tempFolder
-                String md5sum = RoddyIOHelperMethods.getSingleMD5OfFilesInDirectoryIncludingDirectoryNamesAndPermissions(subFolder)
-                String zipFilename = "cTools_${pInfo.getName()}:${pInfo.getProdVersion()}_${subFolder.getName()}.zip"
-                String zipMD5Filename = zipFilename + "_contentmd5"
-                File tempFile = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipFilename)
-                File zipMD5File = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipMD5Filename)
-                boolean createNew = false
-                if (!tempFile.exists())
-                    createNew = true
+    CompressedArchiveInfo compressToolFolder(File folder, PluginInfo pInfo) {
+        long startSingleCompression = System.nanoTime()
 
-                if (!zipMD5File.exists() || zipMD5File.text.trim() != md5sum)
-                    createNew = true
+        // Md5sum from tempFolder
+        String md5sum = RoddyIOHelperMethods.getSingleMD5OfFilesInDirectoryIncludingDirectoryNamesAndPermissions(folder)
+        String zipFilename = "cTools_${pInfo.getName()}:${pInfo.getProdVersion()}_${folder.getName()}.zip"
+        String zipMD5Filename = zipFilename + "_contentmd5"
+        File zipFile = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipFilename)
+        File zipMD5File = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipMD5Filename)
+        boolean createNew = false
+        if (!zipFile.exists())
+            createNew = true
 
-                if (createNew) {
-                    RoddyIOHelperMethods.compressDirectory(subFolder, tempFile)
-                    zipMD5File << md5sum
-                }
+        if (!zipMD5File.exists() || zipMD5File.text.trim() != md5sum)
+            createNew = true
 
-                String newArchiveMD5 = md5sum
-                if (tempFile.size() == 0)
-                    logger.severe("The size of archive ${tempFile.getName()} is 0!")
-                synchronized (mapOfPreviouslyCompressedArchivesByFolder) {
-                    mapOfPreviouslyCompressedArchivesByFolder[subFolder] = new CompressedArchiveInfo(tempFile, newArchiveMD5, subFolder)
-                }
-                logger.postSometimesInfo("Compression of ${zipFilename} took ${(System.nanoTime() - startSingleCompression) / 1000000} ms.")
+        if (createNew) {
+            RoddyIOHelperMethods.compressDirectory(folder, zipFile)
+            zipMD5File << md5sum
+        }
+
+        String newArchiveMD5 = md5sum
+        if (zipFile.size() == 0)
+            logger.severe("The size of archive ${zipFile.getName()} is 0!")
+        CompressedArchiveInfo resultArchive = new CompressedArchiveInfo(zipFile, newArchiveMD5, folder)
+        synchronized (mapOfPreviouslyCompressedArchivesByFolder) {
+            mapOfPreviouslyCompressedArchivesByFolder[folder] = resultArchive
+        }
+        logger.postSometimesInfo("Compression of ${zipFilename} took ${(System.nanoTime() - startSingleCompression) / 1000000} ms.")
+        return resultArchive
+    }
+
+    void validateCompressedArchiveOrFail(CompressedArchiveInfo archiveInfo) {
+        File temporaryDirectory = File.createTempDir()
+        temporaryDirectory.deleteOnExit()
+        try {
+            RoddyIOHelperMethods.decompressFile(archiveInfo.localArchive, temporaryDirectory)
+        } finally {
+            temporaryDirectory.deleteDir()
         }
     }
 

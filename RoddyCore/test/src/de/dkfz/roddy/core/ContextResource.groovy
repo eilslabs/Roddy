@@ -34,6 +34,20 @@ class TestWorkflow extends Workflow {
 }
 
 @CompileStatic
+/**
+ * The class is used to provide e.g. mock contexts, runtime services, configuration, temporary folders
+ * for tests.
+ *
+ * You can use it in a Spock test, but you need to add it as a classrule
+ * \@ClassRule
+ *  static ContextResource contextResource = new ContextResource()
+ *
+ *  AND
+ *
+ *  you might need to call before and after in your setupSpec cleanupSpec methods. Both methods
+ *  are not called automatically.
+ *
+ */
 class ContextResource extends ExternalResource {
 
     static final String DIR_PREFIX = "RoddyTests"
@@ -43,14 +57,14 @@ class ContextResource extends ExternalResource {
     public File tempDir
 
     @Override
-    protected void before() throws Throwable {
+    public void before() throws Throwable {
         tempFolder.create()
         tempDir = tempFolder.newFolder(DIR_PREFIX)
         Roddy.applicationConfiguration.getOrSetApplicationProperty(Constants.APP_PROPERTY_SCRATCH_BASE_DIRECTORY, tempDir.toString())
     }
 
     @Override
-    protected void after() {
+    public void after() {
         tempFolder.delete()
     }
 

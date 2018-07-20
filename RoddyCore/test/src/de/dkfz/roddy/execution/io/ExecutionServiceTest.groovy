@@ -26,44 +26,42 @@ import de.dkfz.roddy.plugins.LibrariesFactoryTest
 import groovy.transform.CompileStatic
 import org.junit.BeforeClass
 import org.junit.ClassRule
-import org.junit.Ignore;
 import org.junit.Test
 
 /**
  * Created by heinold on 25.11.15.
  */
 @CompileStatic
-@Ignore("setupContext fails")
-public class BEExecutionServiceTest {
+class ExecutionServiceTest {
 
     @ClassRule
-    final static ContextResource contextResource = new ContextResource()
+    public static ContextResource contextResource = new ContextResource()
 
-    public static ExecutionContext mockedContext;
+    public static ExecutionContext mockedContext
 
     @BeforeClass
-    public static void setupContext() {
+    static void setupContext() {
         //Setup plugins and default configuration folders
         LibrariesFactory.initializeFactory(true)
-        LibrariesFactory.getInstance().loadLibraries(LibrariesFactory.buildupPluginQueue(LibrariesFactoryTest.callLoadMapOfAvailablePlugins(), "DefaultPlugin").values() as List);
+        LibrariesFactory.getInstance().loadLibraries(LibrariesFactory.buildupPluginQueue(LibrariesFactoryTest.callLoadMapOfAvailablePlugins(), "DefaultPlugin").values() as List)
         ConfigurationFactory.initialize(LibrariesFactory.getInstance().getLoadedPlugins().collect { it -> it.getConfigurationDirectory() })
 
         final Configuration mockupConfig = new Configuration(new PreloadedConfiguration(null, Configuration.ConfigurationType.OTHER, "test", "", "", null, "", ResourceSetSize.l, null, null, null, null), ConfigurationFactory.getInstance().getConfiguration("default")) {
             @Override
             File getSourceToolPath(String tool) {
                 if (tool == "wrapinScript")
-                    return super.getSourceToolPath(tool);
+                    return super.getSourceToolPath(tool)
                 return new File("/tmp/RoddyTests/RoddyTestScript_ExecutionServiceTest.sh")
             }
-        };
+        }
 
-        mockupConfig.getConfigurationValues().add(new ConfigurationValue(RuntimeService.RODDY_CENTRAL_EXECUTION_DIRECTORY, "/tmp/roddyCentralDirectory"));
+        mockupConfig.getConfigurationValues().add(new ConfigurationValue(RuntimeService.RODDY_CENTRAL_EXECUTION_DIRECTORY, "/tmp/roddyCentralDirectory"))
 
-        mockedContext = contextResource.createSimpleContext(BEExecutionServiceTest, mockupConfig);
+        mockedContext = contextResource.createSimpleContext(ExecutionServiceTest, mockupConfig)
     }
 
     @Test
-    public void testExecuteTool() throws Exception {
+    void testExecuteTool() throws Exception {
 
         // Create a test script which outputs several file paths
         def testFolder = "/tmp/RoddyTests"
@@ -80,29 +78,29 @@ public class BEExecutionServiceTest {
 
         // Create the definition for it
         ExecutionContext context = mockedContext
-        Configuration config = context.getConfiguration();
+        Configuration config = context.getConfiguration()
 
         def scriptsFolder = new File(mockedContext.executionDirectory, "analysisTools/roddyTools/")
         scriptsFolder.mkdirs()
-        def sourceToolpath = config.getSourceToolPath("wrapinScript");
+        def sourceToolpath = config.getSourceToolPath("wrapinScript")
         def targetToolpath = new File(scriptsFolder, sourceToolpath.name)
-        targetToolpath.delete();
-        targetToolpath << sourceToolpath.text;
-        targetToolpath.setExecutable(true, true);
+        targetToolpath.delete()
+        targetToolpath << sourceToolpath.text
+        targetToolpath.setExecutable(true, true)
 
-        ToolEntry toolEntry = new ToolEntry("RoddyTests", "RoddyTests", "RoddyTestScript_ExecutionServiceTest.sh");
+        ToolEntry toolEntry = new ToolEntry("RoddyTests", "RoddyTests", "RoddyTestScript_ExecutionServiceTest.sh")
         toolEntry.getOutputParameters(config).add(new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, (Class<BaseFile>)null, "TEST", "default"))
-        config.getTools().add(toolEntry);
+        config.getTools().add(toolEntry)
 
         // Initialize with fallback provider! Don't worry about errors at this point.
-        FileSystemAccessProvider.initializeProvider(true);
-        ExecutionService.initializeService(LocalExecutionService.class, RunMode.CLI);
+        FileSystemAccessProvider.initializeProvider(true)
+        ExecutionService.initializeService(LocalExecutionService.class, RunMode.CLI)
 
         // Call it
-        def executeTool = ExecutionService.getInstance().executeTool(context, "RoddyTests");
+        def executeTool = ExecutionService.getInstance().executeTool(context, "RoddyTests")
 
         // Check the output contents
-        assert executeTool.size() == 4;
+        assert executeTool.size() == 4
         assert executeTool == ["${testScriptPrefix}_a", "${testScriptPrefix}_b", "${testScriptPrefix}_c", "${testScriptPrefix}_d"]
     }
 }
