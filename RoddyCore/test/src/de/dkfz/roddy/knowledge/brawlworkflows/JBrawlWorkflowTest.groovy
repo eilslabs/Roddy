@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.knowledge.brawlworkflows
 
+import de.dkfz.roddy.Constants
 import de.dkfz.roddy.config.AnalysisConfiguration
 import de.dkfz.roddy.config.ContextConfiguration
 import de.dkfz.roddy.config.ProjectConfiguration
@@ -95,7 +96,7 @@ public class JBrawlWorkflowTest {
                         (new GenericFileGroup([] as List)).class as Class<FileGroup>,
                         testFileClass,
                         "FUZZY_GROUP",
-                        ToolFileGroupParameter.PassOptions.parameters));
+                        ToolFileGroupParameter.PassOptions.parameters, Constants.DEFAULT));
         cc.getTools().add(loadFastqFiles)
 
         String[] _l = callPrepareAndFormatLine("""set inputfiles = loadfilesWith "${LOAD_FASTQ_FILES}"()'""").split("[ ]")

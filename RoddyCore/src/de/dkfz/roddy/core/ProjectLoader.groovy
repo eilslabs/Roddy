@@ -218,7 +218,7 @@ class ProjectLoader {
 
             // Check, if the i/o directory is set on the command line
             if (!Roddy.useCustomIODirectories())
-                throw new ProjectLoaderException("It is not possible to use the project configuration free mode without the --${RoddyStartupOptions.useiodir.name()} option.")
+                throw new ProjectLoaderException("It is not possible to use the project configuration-free mode without the --${RoddyStartupOptions.useiodir.name()} option.")
 
             createAndWriteAutoConfigurationFile()
 

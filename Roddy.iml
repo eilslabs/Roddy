@@ -14,6 +14,7 @@
       <sourceFolder url="file://$MODULE_DIR$/RoddyCore/test/src" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/RoddyCore/test/resources" type="java-test-resource" />
       <excludeFolder url="file://$MODULE_DIR$/.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/docs/_build" />
       <excludeFolder url="file://$MODULE_DIR$/gradleBuild" />
       <excludeFolder url="file://$MODULE_DIR$/out" />
     </content>
@@ -82,7 +83,5 @@
     <orderEntry type="library" scope="TEST" name="Gradle: org.spockframework:spock-core:1.1-groovy-2.4" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: junit:junit:4.12" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.hamcrest:hamcrest-core:1.3" level="project" />
-    <orderEntry type="library" scope="TEST" name="Gradle: com.github.mifmif:generex:1.0.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Gradle: dk.brics.automaton:automaton:1.11-8" level="project" />
   </component>
 </module>

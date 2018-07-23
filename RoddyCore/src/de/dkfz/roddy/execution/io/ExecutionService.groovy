@@ -32,6 +32,7 @@ import de.dkfz.roddy.execution.jobs.BEJobID
 import de.dkfz.roddy.execution.jobs.cluster.lsf.LSFCommand
 import de.dkfz.roddy.execution.jobs.cluster.pbs.PBSCommand
 import de.dkfz.roddy.execution.jobs.cluster.sge.SGECommand
+import de.dkfz.roddy.execution.jobs.direct.synchronousexecution.DirectCommand
 import de.dkfz.roddy.execution.jobs.direct.synchronousexecution.DirectSynchronousExecutionJobManager
 import de.dkfz.roddy.plugins.LibrariesFactory
 import de.dkfz.roddy.plugins.PluginInfo
@@ -257,7 +258,9 @@ abstract class ExecutionService implements BEExecutionService {
         } else if (command instanceof PBSCommand) {
             return String.format("0x%04X", System.nanoTime() % 10000)
         } else if (command instanceof SGECommand) {
-            return String.format("dummy dummy 0%04d", System.nanoTime() % 10000)
+            return String.format("dummy 0%04d", System.nanoTime() % 10000)
+        } else if (command instanceof DirectCommand) {
+            return String.format("dummy 0%04d", System.nanoTime() % 10000)
         } else {
             throw new RuntimeException("Don't know how to create a valid dummy output for a '${command.getClass()}'")
         }
@@ -319,7 +322,7 @@ abstract class ExecutionService implements BEExecutionService {
             def userGroup = context.getOutputGroupString()
             boolean isGroupAvailable = FileSystemAccessProvider.getInstance().isGroupAvailable(userGroup)
             if (!isGroupAvailable) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The requested user group ${userGroup} is not available on the target system.\n\tDisable Roddys access rights managemd by setting outputAllowAccessRightsModification to true or\n\tSelect a proper group by setting outputFileGroup."))
+                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The requested user group ${userGroup} is not available on the target system.\n\t\tDisable Roddys access rights management by setting outputAllowAccessRightsModification to true or\n\t\tSelect a proper group by setting outputFileGroup."))
                 valid = false
             }
         }
@@ -705,7 +708,8 @@ abstract class ExecutionService implements BEExecutionService {
 
                 if (createNew) {
                     RoddyIOHelperMethods.compressDirectory(subFolder, tempFile)
-                    zipMD5File << md5sum
+                    // See issue #286
+                    zipMD5File.text = md5sum
                 }
 
                 String newArchiveMD5 = md5sum

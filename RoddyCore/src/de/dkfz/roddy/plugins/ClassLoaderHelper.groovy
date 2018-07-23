@@ -83,8 +83,8 @@ class ClassLoaderHelper {
         if (foundCoreClass)
             return foundCoreClass
 
-        // TODO This is a very quick hack and heavily depends on the existence of jar on the system!
-        // Java normally ships jar with it, so it might not be the SEVERE / SUPERBAD bad hack.
+        // This part of the code depends on the existence of jar on the system!
+        // Java normally ships jar with it and we check jar on startup. So this should pose no problems.
         List<String> listOfClasses = []
         synchronized (LibrariesFactory.instance.loadedPlugins) {
             LibrariesFactory.instance.loadedPlugins.each {

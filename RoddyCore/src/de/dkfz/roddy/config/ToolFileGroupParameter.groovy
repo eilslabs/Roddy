@@ -25,6 +25,7 @@ class ToolFileGroupParameter extends ToolEntry.ToolParameterOfFiles {
     public final List<ToolFileParameter> files
     public final PassOptions passOptions
     public final IndexOptions indexOptions
+    public final String selectiontag
 
     enum PassOptions {
         parameters,
@@ -37,30 +38,33 @@ class ToolFileGroupParameter extends ToolEntry.ToolParameterOfFiles {
     }
 
     @Deprecated
-    ToolFileGroupParameter(Class<FileGroup> groupClass, List<ToolFileParameter> children, String scriptParameterName, PassOptions passas = PassOptions.parameters, IndexOptions indexOptions = IndexOptions.numeric) {
+    ToolFileGroupParameter(Class<FileGroup> groupClass, List<ToolFileParameter> children, String scriptParameterName, PassOptions passas = PassOptions.parameters, IndexOptions indexOptions = IndexOptions.numeric, String selectiontag) {
         super(scriptParameterName)
         this.groupClass = groupClass
         this.passOptions = passas
         this.genericFileClass = null
         this.indexOptions = indexOptions
         this.files = children ?: new LinkedList<ToolFileParameter>()
+        this.selectiontag = selectiontag
     }
 
-    ToolFileGroupParameter(Class<FileGroup> groupClass, Class<BaseFile> genericFileClass, String scriptParameterName, PassOptions passas = PassOptions.parameters, IndexOptions indexOptions = IndexOptions.numeric) {
+    ToolFileGroupParameter(Class<FileGroup> groupClass, Class<BaseFile> genericFileClass, String scriptParameterName, PassOptions passas = PassOptions.parameters, IndexOptions indexOptions = IndexOptions.numeric, String selectiontag) {
         super(scriptParameterName)
         this.groupClass = groupClass
         this.passOptions = passas
         this.genericFileClass = genericFileClass
         this.indexOptions = indexOptions
         this.files = new LinkedList<ToolFileParameter>()
+        this.selectiontag = selectiontag
     }
 
     /**
      * Copy constructor
      */
     @Deprecated
-    ToolFileGroupParameter(String scriptParameterName, Class<FileGroup> groupClass, Class<BaseFile> genericFileClass, PassOptions passOptions, IndexOptions indexOptions, List<ToolFileParameter> files) {
+    ToolFileGroupParameter(String scriptParameterName, Class<FileGroup> groupClass, Class<BaseFile> genericFileClass, PassOptions passOptions, IndexOptions indexOptions, List<ToolFileParameter> files, String selectiontag) {
         super(scriptParameterName)
+        this.selectiontag = selectiontag
         this.groupClass = groupClass
         this.genericFileClass = genericFileClass
         this.passOptions = passOptions
@@ -70,7 +74,7 @@ class ToolFileGroupParameter extends ToolEntry.ToolParameterOfFiles {
 
     @Override
     public ToolFileGroupParameter clone() {
-        return new ToolFileGroupParameter(scriptParameterName, groupClass, genericFileClass, passOptions, indexOptions, files?.collect { ToolFileParameter tfp -> tfp.clone() })
+        return new ToolFileGroupParameter(scriptParameterName, groupClass, genericFileClass, passOptions, indexOptions, files?.collect { ToolFileParameter tfp -> tfp.clone() }, selectiontag)
     }
 
     @Override
@@ -87,17 +91,19 @@ class ToolFileGroupParameter extends ToolEntry.ToolParameterOfFiles {
         if (groupClass != that.groupClass) return false
         if (indexOptions != that.indexOptions) return false
         if (passOptions != that.passOptions) return false
+        if (selectiontag != that.selectiontag) return false
 
         return true
     }
 
     int hashCode() {
-        int result
-        result = (groupClass != null ? groupClass.hashCode() : 0)
+        int result = super.hashCode()
+        result = 31 * result + (groupClass != null ? groupClass.hashCode() : 0)
         result = 31 * result + (genericFileClass != null ? genericFileClass.hashCode() : 0)
+        result = 31 * result + (files != null ? files.hashCode() : 0)
         result = 31 * result + (passOptions != null ? passOptions.hashCode() : 0)
         result = 31 * result + (indexOptions != null ? indexOptions.hashCode() : 0)
-        result = 31 * result + (files != null ? files.hashCode() : 0)
+        result = 31 * result + (selectiontag != null ? selectiontag.hashCode() : 0)
         return result
     }
 
@@ -119,13 +125,13 @@ class ToolFileGroupParameter extends ToolEntry.ToolParameterOfFiles {
     }
 
     @Override
-    public List<ToolFileParameter> getAllFiles() {
-        return files.collect { it.getAllFiles() }.flatten() as List<ToolFileParameter>
+    public List<ToolEntry.ToolParameterOfFiles> getAllFiles() {
+        return files.collect { it.getAllFiles() }.flatten() as List<ToolEntry.ToolParameterOfFiles>
     }
 
     @Override
-    public List<ToolFileParameter> getFiles() {
-        return files
+    public List<ToolEntry.ToolParameterOfFiles> getFiles() {
+        return files as List<ToolEntry.ToolParameterOfFiles>
     }
 
 

@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.config;
 
+import de.dkfz.roddy.Constants;
 import de.dkfz.roddy.Roddy;
 import de.dkfz.roddy.knowledge.files.BaseFile;
 import de.dkfz.roddy.core.ExecutionContext;
@@ -14,15 +15,14 @@ import de.dkfz.roddy.knowledge.files.FileStageSettings;
 
 import java.io.File;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.Map;
 
 import de.dkfz.roddy.config.FilenamePatternHelper.Command;
 import de.dkfz.roddy.config.FilenamePatternHelper.CommandAttribute;
 import de.dkfz.roddy.tools.RoddyIOHelperMethods;
 
+import static de.dkfz.roddy.Constants.DEFAULT;
 import static de.dkfz.roddy.StringConstants.EMPTY;
 
 /**
@@ -35,7 +35,6 @@ public abstract class FilenamePattern implements RecursiveOverridableMapContaine
     public static final String PLACEHOLDER_SOURCEFILE_PROPERTY = "${sourcefileProperty";
     public static final String PLACEHOLDER_CVALUE = "${cvalue";
     public static final String PLACEHOLDER_JOBPARAMETER = "${jobParameter";
-    public static final String DEFAULT_SELECTION_TAG = "default";
 
     protected final Class<BaseFile> cls;
     protected final String pattern;
@@ -46,7 +45,7 @@ public abstract class FilenamePattern implements RecursiveOverridableMapContaine
     public FilenamePattern(Class<BaseFile> cls, String pattern, String selectionTag) {
         this.cls = cls;
         this.pattern = pattern;
-        this.selectionTag = selectionTag != null ? selectionTag : DEFAULT_SELECTION_TAG;
+        this.selectionTag = selectionTag != null ? selectionTag : DEFAULT;
     }
 
     public Class<BaseFile> getCls() {
@@ -58,7 +57,7 @@ public abstract class FilenamePattern implements RecursiveOverridableMapContaine
     }
 
     public boolean hasSelectionTag() {
-        return !selectionTag.equals(DEFAULT_SELECTION_TAG);
+        return !selectionTag.equals(DEFAULT);
     }
 
     public String getSelectionTag() {
@@ -192,7 +191,7 @@ public abstract class FilenamePattern implements RecursiveOverridableMapContaine
 
             Command command = FilenamePatternHelper.extractCommand(PLACEHOLDER_CVALUE, src);
             CommandAttribute name = command.attributes.get("name");
-            CommandAttribute defaultValue = command.attributes.get("default");
+            CommandAttribute defaultValue = command.attributes.get(DEFAULT);
 
             if (name != null) {
                 ConfigurationValue cv;

@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.knowledge.methods
 
+import de.dkfz.roddy.Constants
 import de.dkfz.roddy.config.*
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ContextResource
@@ -20,6 +21,8 @@ import org.junit.ClassRule
 import org.junit.Test
 
 import java.lang.reflect.Constructor
+
+import static de.dkfz.roddy.Constants.DEFAULT
 
 /**
  * Created by heinold on 19.01.16.
@@ -46,7 +49,7 @@ class GenericMethodTest {
         mockupContext = contextResource.createSimpleContext(GenericMethodTest)
         def cfg = mockupContext.getConfiguration()
         cfg.getTools().add(new ToolEntry("testTool", "testTools", "/tmp/testTool"))
-        cfg.getFilenamePatterns().add(new DerivedFromFilenamePattern(derivedFileClass, fileBaseClass, '/tmp/anoutputfile_${fgindex}.txt', "default"))
+        cfg.getFilenamePatterns().add(new DerivedFromFilenamePattern(derivedFileClass, fileBaseClass, '/tmp/anoutputfile_${fgindex}.txt', DEFAULT))
     }
 
     BaseFile getBaseFile() {
@@ -59,14 +62,14 @@ class GenericMethodTest {
         def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, [
                 new ToolFileParameter(LibrariesFactory.getInstance().loadRealOrSyntheticClass("AFile", BaseFile as Class<FileObject>), null, "PARMA", new ToolFileParameterCheckCondition(true)),
                 new ToolFileParameter(LibrariesFactory.getInstance().loadRealOrSyntheticClass("AFile", BaseFile as Class<FileObject>), null, "PARMB", new ToolFileParameterCheckCondition(true))
-        ], "APARM")
+        ], "APARM", DEFAULT)
         FileGroup fg = new GenericMethod("testTool", null, getBaseFile(), null).createOutputFileGroup(tfg) as FileGroup
         assert fg.filesInGroup.size() == 2
     }
 
     @Test
     void testCreateOutputFileGroupWithNumericFGIndex() {
-        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, derivedFileClass, "APARM")
+        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, derivedFileClass, "APARM", DEFAULT)
         def numericCount = 4
         FileGroup fg = new GenericMethod("testTool", null, getBaseFile(), numericCount).createOutputFileGroup(tfg) as FileGroup
         assert fg.filesInGroup.size() == numericCount
@@ -77,7 +80,7 @@ class GenericMethodTest {
 
     @Test
     void testCreateOutputFileGroupWithStringFGIndex() {
-        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, derivedFileClass, "APARM", ToolFileGroupParameter.PassOptions.parameters, ToolFileGroupParameter.IndexOptions.strings)
+        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, derivedFileClass, "APARM", ToolFileGroupParameter.PassOptions.parameters, ToolFileGroupParameter.IndexOptions.strings, DEFAULT)
         FileGroup fg = new GenericMethod("testTool", null, getBaseFile(), stringIndices).createOutputFileGroup(tfg) as FileGroup
         assert fg.filesInGroup.size() == stringIndices.size()
         for (int i = 0; i < stringIndices.size(); i++) {
@@ -87,13 +90,13 @@ class GenericMethodTest {
 
     @Test(expected = NegativeArraySizeException)
     void testCreateOutputFileGroupWithNegativeIndexValues() {
-        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, fileBaseClass, "APARM", ToolFileGroupParameter.PassOptions.parameters, ToolFileGroupParameter.IndexOptions.strings)
+        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, fileBaseClass, "APARM", ToolFileGroupParameter.PassOptions.parameters, ToolFileGroupParameter.IndexOptions.strings, DEFAULT)
         new GenericMethod("testTool", null, getBaseFile(), -1).createOutputFileGroup(tfg) as FileGroup
     }
 
     @Test(expected = RuntimeException)
     void testCreateOutputFileGroupWithMissingIndexValues() {
-        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, fileBaseClass, "APARM", ToolFileGroupParameter.PassOptions.parameters, ToolFileGroupParameter.IndexOptions.strings)
+        def tfg = new ToolFileGroupParameter(GenericFileGroup as Class<FileGroup>, fileBaseClass, "APARM", ToolFileGroupParameter.PassOptions.parameters, ToolFileGroupParameter.IndexOptions.strings, DEFAULT)
         new GenericMethod("testTool", null, getBaseFile(), []).createOutputFileGroup(tfg) as FileGroup
     }
 

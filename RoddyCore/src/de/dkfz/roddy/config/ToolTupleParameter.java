@@ -18,27 +18,27 @@ import static de.dkfz.roddy.Constants.NO_VALUE;
  * Tuples are supposed to contain multiple, equally important files of different types.
  */
 public class ToolTupleParameter extends ToolEntry.ToolParameterOfFiles {
-    public final List<ToolFileParameter> files;
+    public final List<ToolEntry.ToolParameterOfFiles> files;
 
-    public ToolTupleParameter(List<ToolFileParameter> files) {
+    public ToolTupleParameter(List<ToolEntry.ToolParameterOfFiles> files) {
         super(NO_VALUE); //Tuples are not passed
         this.files = files;
     }
 
     @Override
     public ToolTupleParameter clone() {
-        List<ToolFileParameter> _files = new LinkedList<>();
-        for (ToolFileParameter tf : files) _files.add(tf.clone());
+        List<ToolEntry.ToolParameterOfFiles> _files = new LinkedList<>();
+        for (ToolEntry.ToolParameterOfFiles tf : files) _files.add(tf.clone());
         return new ToolTupleParameter(_files);
     }
 
     @Override
-    public List<ToolFileParameter> getFiles() {
+    public List<ToolEntry.ToolParameterOfFiles> getFiles() {
         return files;
     }
 
     @Override
-    public List<ToolFileParameter> getAllFiles() { return files; }
+    public List<ToolEntry.ToolParameterOfFiles> getAllFiles() { return files; }
 
     @Override
     public boolean hasSelectionTag() {

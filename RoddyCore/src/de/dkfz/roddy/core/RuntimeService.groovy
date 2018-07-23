@@ -167,7 +167,9 @@ class RuntimeService {
         }
     }
 
-    /** There are non-cohort (=standard) datasets and cohort datasets */
+    /**
+     * There are non-cohort (=standard) datasets and cohort datasets
+     * */
     List<DataSet> loadStandardDatasetsWithFilter(Analysis analysis, List<String> pidFilters, boolean suppressInfo = false) {
         if (pidFilters == null || pidFilters.size() == 0 || pidFilters.size() == 1 && pidFilters.get(0).equals("[ALL]")) {
             pidFilters = Arrays.asList("*")

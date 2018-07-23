@@ -18,6 +18,7 @@ import de.dkfz.roddy.execution.io.ExecutionResult
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.FileAttributes
 import de.dkfz.roddy.knowledge.files.BaseFile
+import groovy.io.FileType
 import org.apache.commons.io.filefilter.WildcardFileFilter
 
 import java.util.concurrent.locks.ReentrantLock
@@ -66,6 +67,11 @@ public class FileSystemAccessProvider {
      * The current users home directory (logon on local or target system)
      */
     protected File _userHome;
+
+    /**
+     * The cached umask
+     */
+    protected Integer _default_umask
 
     protected Map<String, Integer> _groupIDsByGroup = [:];
 
@@ -290,6 +296,39 @@ public class FileSystemAccessProvider {
             }
         } else {
             return eService.listFiles(f, filters);
+        }
+    }
+
+    List<File> listFilesUsingWildcards(File baseFolder, String wildcards) {
+        ExecutionResult result = ExecutionService.instance.execute(commandSet.getFindFilesUsingWildcardsCommand(baseFolder, wildcards))
+        result.resultLines.collect {
+            new File(it)
+        } as List<File>
+    }
+
+    /**
+     * Scope for regular expressions. Used in listFilesUsingRegex
+     */
+    enum RegexSearchDepth {
+        AbsolutePath,
+        RelativeToSearchFolder,
+        Filename
+    }
+
+    List<File> listFilesUsingRegex(File baseFolder, String regex, RegexSearchDepth scope) {
+        ExecutionResult result = ExecutionService.instance.execute(commandSet.getListFullDirectoryContentRecursivelyCommand(baseFolder, -1, FileType.FILES, false))
+
+        List<File> foundFiles = result.resultLines.collect { new File(it) } as List<File>
+
+        foundFiles.findAll {
+            String comparable
+            if (scope == RegexSearchDepth.AbsolutePath) {
+                comparable = it.absolutePath
+            } else if (scope == RegexSearchDepth.RelativeToSearchFolder) {
+                comparable = it.absolutePath[baseFolder.absolutePath.length() + 1..-1]
+            } else if (scope == RegexSearchDepth.Filename)
+                comparable = it.name
+            comparable ==~ regex
         }
     }
 
@@ -672,7 +711,7 @@ public class FileSystemAccessProvider {
     boolean appendLineToFile(boolean atomic, File filename, String line, boolean blocking) {
         try {
             ExecutionService eService = ExecutionService.getInstance()
-            if(atomic) { // Work very safe and use a lockfile
+            if (atomic) { // Work very safe and use a lockfile
                 // TODO This also needs the lockfile command from the configuration.
                 // TODO As we always used lockfile, we'll do it here as well for now
                 eService.execute(commandSet.getLockedAppendLineToFileCommand(filename, line))
@@ -735,8 +774,11 @@ public class FileSystemAccessProvider {
     }
 
     int getDefaultUserMask() {
-        String command = commandSet.getGetUsermaskCommand();
-        ExecutionResult executionResult = ExecutionService.getInstance().execute(command);
-        return Integer.decode(executionResult.firstLine);
+        if (!_default_umask) {
+            String command = commandSet.getGetUsermaskCommand();
+            ExecutionResult executionResult = ExecutionService.getInstance().execute(command);
+            _default_umask = Integer.decode(executionResult.firstLine)
+        }
+        return _default_umask
     }
 }

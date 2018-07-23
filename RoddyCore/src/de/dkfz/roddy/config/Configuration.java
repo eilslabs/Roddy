@@ -201,7 +201,10 @@ public class Configuration implements ContainerParent<Configuration> {
      */
     @Override
     public String getID() {
-        return preloadedConfiguration.id;
+        if(preloadedConfiguration != null)
+            return preloadedConfiguration.id;
+        else
+            return "'Unnamed Configuration'";
     }
 
     public String getDescription() {

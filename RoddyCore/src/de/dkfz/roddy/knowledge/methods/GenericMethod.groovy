@@ -383,7 +383,7 @@ class GenericMethod {
     private FileObject createOutputFile(ToolFileParameter tparm) {
         ToolFileParameter fileParameter = tparm;
         BaseFile bf = convertToolFileParameterToBaseFile(fileParameter)
-        for (ToolFileParameter childFileParameter in fileParameter.getFiles()) {
+        for (ToolFileParameter childFileParameter in (fileParameter.getFiles() as List<ToolFileParameter>)) {
             try {
                 if (childFileParameter.parentVariable == null) {
                     continue;
@@ -421,13 +421,19 @@ class GenericMethod {
 
     FileObject createOutputTuple(ToolTupleParameter tfg) {
         //TODO Auto recognize tuples?
-        List<FileObject> filesInTuple = [];
-        for (ToolFileParameter fileParameter in tfg.files) {
-            BaseFile bf = convertToolFileParameterToBaseFile(fileParameter);
-            filesInTuple << bf;
-            allCreatedObjects << bf;
+        List<FileObject> objectsInTuple = [];
+        for (ToolEntry.ToolParameterOfFiles tparm in tfg.files) {
+            if (tparm instanceof ToolFileParameter) {
+                BaseFile bf = convertToolFileParameterToBaseFile(tparm as ToolFileParameter);
+                objectsInTuple << bf;
+                allCreatedObjects << bf;
+            } else if (tparm instanceof ToolFileGroupParameter) {
+                FileGroup fg = createOutputFileGroup(tparm as ToolFileGroupParameter) as FileGroup
+                objectsInTuple << fg
+                allCreatedObjects << fg
+            }
         }
-        return FileObjectTupleFactory.createTuple(filesInTuple);
+        return FileObjectTupleFactory.createTuple(objectsInTuple);
     }
 
     FileObject createOutputFileGroup(ToolFileGroupParameter tfg) {
@@ -437,7 +443,7 @@ class GenericMethod {
             /**
              * This can only be the case if files is set. Otherwise we need a different way to identify files. E.g. based on index values... How do we set them?
              */
-            for (ToolFileParameter fileParameter in tfg.files) {
+            for (ToolFileParameter fileParameter in (tfg.files as List<ToolFileParameter>)) {
                 BaseFile bf = convertToolFileParameterToBaseFile(fileParameter)
                 filesInGroup << bf;
                 allCreatedObjects << bf;
@@ -448,7 +454,7 @@ class GenericMethod {
             if (!outputFileGroupIndices) {
                 throw new RuntimeException("A tool which outputs a filegroup with index values needs to be called properly! Pass index values in the call.")
             }
-            ToolFileParameter autoToolFileParameter = new ToolFileParameter(tfg.genericFileClass, [], tfg.scriptParameterName, new ToolFileParameterCheckCondition(true))
+            ToolFileParameter autoToolFileParameter = new ToolFileParameter(tfg.genericFileClass, [], tfg.scriptParameterName, new ToolFileParameterCheckCondition(true), tfg.selectiontag, null, null)
             for (Object index in outputFileGroupIndices) {
                 BaseFile bf = convertToolFileParameterToBaseFile(autoToolFileParameter, index.toString())
                 filesInGroup << bf

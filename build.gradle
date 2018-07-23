@@ -104,7 +104,7 @@ configurations.all {
 dependencies {
     compile 'com.github.theroddywms:RoddyToolLib:1.0.0'         // MIT
     // compile 'com.github.theroddywms:RoddyToolLib:master-SNAPSHOT'    // MIT
-    compile 'com.github.theroddywms:BatchEuphoria:0.0.3'           // MIT
+    compile 'com.github.theroddywms:BatchEuphoria:0.0.4'           // MIT
     // compile 'com.github.theroddywms:BatchEuphoria:master-SNAPSHOT'   // MIT
     compile 'org.codehaus.groovy:groovy-all:2.4.9'              // Apache 2.0
 
@@ -257,6 +257,7 @@ idea {
 
 sphinx {
     sourceDirectory = "${project.projectDir}/docs/"
+    warningsAsErrors = true
 }
 
 // end of build.gradle

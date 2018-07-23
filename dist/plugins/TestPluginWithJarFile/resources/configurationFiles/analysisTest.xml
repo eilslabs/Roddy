@@ -17,7 +17,7 @@
         <!--<cvalue name="valuec" value="${valuea}"/>-->
         <!--<cvalue name="valuea" value="${valueb}"/>-->
         <!--<cvalue name="valueb" value="${valuea}"/>-->
-        <cvalue name="runWithErrors" value="false" type="boolean" />
+        <cvalue name="runWithErrors" value="true" type="boolean" />
         <cvalue name="aValueWhichWillBePassedAsParameter" value="WillBeOverriden" />
         <cvalue name="aValueWithASystemDependency" value="${SHELL}" />
         <cvalue name="aValueWithDependencyToAParameter" value="${aJobParm}" />

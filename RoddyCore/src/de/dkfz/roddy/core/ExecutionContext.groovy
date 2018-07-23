@@ -11,6 +11,7 @@ import de.dkfz.roddy.Constants
 import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.config.Configuration
 import de.dkfz.roddy.config.ConfigurationConstants
+import de.dkfz.roddy.config.ConfigurationError
 import de.dkfz.roddy.config.RecursiveOverridableMapContainerForConfigurationValues
 import de.dkfz.roddy.config.ToolEntry
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
@@ -86,7 +87,18 @@ class ExecutionContext {
      * Keeps a list of errors which happen either on read back or on execution.
      * The list is not stored and rebuilt if necessary, so not all errors might be available.
      */
-    private final List<ExecutionContextError> errors = new LinkedList<>()
+    private final List<ExecutionContextError> errors = []
+    /**
+     * Keeps a list of warnings which happen either on read back or on execution.
+     * The list is not stored and rebuilt if necessary, so not all errors might be available.
+     */
+    private final List<ExecutionContextError> warnings = []
+    /**
+     * Keeps a list of info entries which happen either on read back or on execution.
+     * The list is not stored and rebuilt if necessary, so not all errors might be available.
+     */
+    private final List<ExecutionContextError> infos = []
+
     /**
      * The timestamp of this context object
      */
@@ -569,12 +581,69 @@ class ExecutionContext {
     }
 
     /**
-     * Appends an entry to the errors list.
+     * Deprecated sind 3.2
      *
-     * @param error
+     * Appends an entry to the error, warnings or info list. Will internally call addError, addWarning or addInfo
+     * Will treat other levels than warning, info or severe as severe!
      */
+    @Deprecated
     void addErrorEntry(ExecutionContextError error) {
-        this.errors.add(error)
+        switch (error.errorLevel) {
+            case Level.WARNING:
+                addWarning(error)
+                break
+            case Level.INFO:
+                addInfo(error)
+                break
+            case Level.SEVERE:
+                addError(error)
+                break
+            default:
+                logger.warning("The message '${error.description}' had an unknown level ${error.errorLevel} and will be treated as an error.")
+                addError(error)
+        }
+    }
+
+    /**
+     * API Level 3.2+
+     */
+    void addError(ExecutionContextError error) {
+        this.errors << error
+    }
+
+    /**
+     * API Level 3.2+
+     */
+    void addWarning(ExecutionContextError warning) {
+        this.errors << warning
+    }
+
+    /**
+     * API Level 3.2+
+     */
+    void addInfo(ExecutionContextError info) {
+        this.infos << info
+    }
+
+    /**
+     * API Level 3.2+
+     */
+    boolean hasErrors() {
+        return errors
+    }
+
+    /**
+     * API Level 3.2+
+     */
+    boolean hasWarnings() {
+        return warnings
+    }
+
+    /**
+     * API Level 3.2+
+     */
+    boolean hasInfos() {
+        return infos
     }
 
     /**
@@ -584,6 +653,22 @@ class ExecutionContext {
      */
     List<ExecutionContextError> getErrors() {
         return new LinkedList<>(errors)
+    }
+
+    /**
+     * API Level 3.2+
+     * Returns a shallow copy of the warnings list
+     */
+    List<ExecutionContextError> getWarnings() {
+        return new LinkedList<>(warnings)
+    }
+
+    /**
+     * API Level 3.2+
+     * Returns a shallow copy of the infos list
+     */
+    List<ExecutionContextError> getInfos() {
+        return new LinkedList<>(infos)
     }
 
     /**
@@ -636,7 +721,7 @@ class ExecutionContext {
      *
      * @return
      */
-    boolean execute() {
+    boolean execute() throws ConfigurationError {
         return workflow.execute(this)
     }
 

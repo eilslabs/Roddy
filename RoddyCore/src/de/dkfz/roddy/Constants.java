@@ -16,8 +16,8 @@ public class Constants {
     // Application constants
     /////////////////////////
 
-    public static final String APP_CURRENT_VERSION_STRING = "3.1.0";
-    public static final String APP_CURRENT_VERSION_BUILD_DATE = "Wed Jun 06 15:28:15 CEST 2018";
+    public static final String APP_CURRENT_VERSION_STRING = "3.2.0";
+    public static final String APP_CURRENT_VERSION_BUILD_DATE = "Fri Jun 29 12:35:53 CEST 2018";
     public static final String APP_PROPERTY_JOB_MANAGER_CLASS = "jobManagerClass";
     public static final String APP_PROPERTY_FILESYSTEM_ACCESS_MANAGER_CLASS = "fileSystemAccessManagerClass";
     public static final String APP_PROPERTY_EXECUTION_SERVICE_CLASS = "executionServiceClass";
@@ -73,6 +73,7 @@ public class Constants {
     public static final String UNKNOWN_USER = "UNKNOWN";
     public static final String UNKNOWN = "UNKNOWN";
     public static final String NO_VALUE = "<NO_VALUE>";
+    public static final String DEFAULT = "default";
 
     public static final String RODDY_PARENT_JOBS = "RODDY_PARENT_JOBS";
     public static final String CONFIG_FILE = "CONFIG_FILE";

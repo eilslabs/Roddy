@@ -22,12 +22,18 @@ import de.dkfz.roddy.core.Workflow
 import de.dkfz.roddy.execution.UnexpectedExecutionResultException
 import de.dkfz.roddy.execution.io.ExecutionService
 import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider
+import de.dkfz.roddy.execution.io.fs.FileSystemAccessProvider.RegexSearchDepth
+import de.dkfz.roddy.execution.io.fs.Regex
+import de.dkfz.roddy.execution.io.fs.Wildcard
 import de.dkfz.roddy.execution.jobs.BEJob
 import de.dkfz.roddy.execution.jobs.BEJobResult
 import de.dkfz.roddy.plugins.LibrariesFactory
 import de.dkfz.roddy.tools.LoggerWrapper
 import de.dkfz.roddy.tools.RoddyConversionHelperMethods
 import de.dkfz.roddy.tools.Tuple2
+
+import static de.dkfz.roddy.Constants.DEFAULT
+import static de.dkfz.roddy.config.FilenamePatternDependency.*
 
 import java.util.concurrent.ExecutionException
 
@@ -52,8 +58,8 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
     public static final String STANDARD_FILE_CLASS = "StandardRoddyFileClass"
 
     static abstract class ConstructionHelperForBaseFiles<T extends ConstructionHelperForBaseFiles> {
-        public final ExecutionContext context;
-        public final FileStageSettings fileStageSettings;
+        public final ExecutionContext context
+        public final FileStageSettings fileStageSettings
         public final String selectionTag
         public final BEJobResult jobResult
         public final String indexInFileGroup
@@ -134,61 +140,61 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
         ConstructionHelperForManualCreation(FileObject parentObject, List<FileObject> parentFiles, ToolEntry creatingTool, String toolID,
                                             String slotID, String selectionTag, String indexInFileGroup, FileStageSettings fileStageSettings,
                                             BEJobResult jobResult) {
-            super(parentObject, parentFiles, creatingTool, toolID, slotID, selectionTag, indexInFileGroup, fileStageSettings, jobResult);
+            super(parentObject, parentFiles, creatingTool, toolID, slotID, selectionTag, indexInFileGroup, fileStageSettings, jobResult)
         }
 
         ConstructionHelperForManualCreation(FileObject parentObject, List<FileObject> parentFiles, ToolEntry creatingTool, String toolID,
                                             String slotID, String selectionTag, FileStageSettings fileStageSettings, BEJobResult jobResult) {
-            super(parentObject, parentFiles, creatingTool, toolID, slotID, selectionTag, null, fileStageSettings, jobResult);
+            super(parentObject, parentFiles, creatingTool, toolID, slotID, selectionTag, null, fileStageSettings, jobResult)
         }
 
         ConstructionHelperForManualCreation(ExecutionContext context, ToolEntry creatingTool, String toolID, String slotID, String selectionTag,
                                             FileStageSettings fileStageSettings, BEJobResult jobResult) {
-            super(context, creatingTool, toolID, slotID, selectionTag, fileStageSettings, jobResult);
+            super(context, creatingTool, toolID, slotID, selectionTag, fileStageSettings, jobResult)
         }
     }
 
 
     static BaseFile constructSourceFile(Class<? extends BaseFile> classToConstruct, File path, ExecutionContext context,
                                         FileStageSettings fileStageSettings = null, BEJobResult jobResult = null) {
-        return classToConstruct.newInstance(new ConstructionHelperForSourceFiles(path, context, fileStageSettings, jobResult));
+        return classToConstruct.newInstance(new ConstructionHelperForSourceFiles(path, context, fileStageSettings, jobResult))
     }
 
     static BaseFile constructGeneric(Class<? extends BaseFile> classToConstruct, FileObject parentObject, List<FileObject> parentFiles,
                                      ToolEntry creatingTool, String toolID, String slotID, String selectionTag, String indexInFileGroup,
                                      FileStageSettings fileStageSettings, BEJobResult jobResult) {
         return classToConstruct.newInstance(new ConstructionHelperForGenericCreation(parentObject, parentFiles, creatingTool, toolID, slotID,
-                selectionTag, indexInFileGroup, fileStageSettings, jobResult));
+                selectionTag, indexInFileGroup, fileStageSettings, jobResult))
     }
 
     static BaseFile constructGeneric(Class<? extends BaseFile> classToConstruct, FileObject parentObject, List<FileObject> parentFiles, ToolEntry
             creatingTool, String toolID, String slotID, String selectionTag, FileStageSettings fileStageSettings, BEJobResult jobResult) {
         return classToConstruct.newInstance(new ConstructionHelperForGenericCreation(parentObject, parentFiles, creatingTool, toolID, slotID,
-                selectionTag, null, fileStageSettings, jobResult));
+                selectionTag, null, fileStageSettings, jobResult))
     }
 
     static BaseFile constructGeneric(Class<? extends BaseFile> classToConstruct, ExecutionContext context, ToolEntry creatingTool, String toolID,
                                      String slotID, String selectionTag, FileStageSettings fileStageSettings, BEJobResult jobResult) {
         return classToConstruct.newInstance(new ConstructionHelperForGenericCreation(context, creatingTool, toolID, slotID, selectionTag,
-                fileStageSettings, jobResult));
+                fileStageSettings, jobResult))
     }
 
     static BaseFile constructManual(Class<? extends BaseFile> classToConstruct, FileObject parentObject, List<FileObject> parentFiles,
                                     ToolEntry creatingTool, String toolID, String slotID, String selectionTag, FileStageSettings fileStageSettings,
                                     BEJobResult jobResult) {
         return classToConstruct.newInstance(new ConstructionHelperForManualCreation(parentObject, parentFiles,
-                creatingTool, toolID, slotID, selectionTag, fileStageSettings, jobResult));
+                creatingTool, toolID, slotID, selectionTag, fileStageSettings, jobResult))
     }
 
     static BaseFile constructManual(Class<? extends BaseFile> classToConstruct, ExecutionContext context,
                                     ToolEntry creatingTool, String toolID, String slotID, String selectionTag, FileStageSettings fileStageSettings,
                                     BEJobResult jobResult) {
         return classToConstruct.newInstance(new ConstructionHelperForManualCreation(context, creatingTool, toolID, slotID, selectionTag,
-                fileStageSettings, jobResult));
+                fileStageSettings, jobResult))
     }
 
     static BaseFile constructManual(Class<? extends BaseFile> classToConstruct, FileObject parentFile) {
-        return constructManual(classToConstruct, parentFile, null, null, null, null, null, null, null);
+        return constructManual(classToConstruct, parentFile, null, null, null, null, null, null, null)
     }
 
     /**
@@ -205,6 +211,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
         Class<BaseFile> fileClass = LibrariesFactory.getInstance().loadRealOrSyntheticClass(_class, BaseFile as Class<FileObject>) as Class<BaseFile>
         return constructSourceFile(fileClass, new File(path), context)
     }
+
 
     /**
      * Just another name for getSourceFile()
@@ -241,7 +248,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      *  The tool should return exactly one line with the path to the file. Otherwise the method throws an UnexpectedExecutionResultException.
      *  If the command could not get successfully executed an ExecutionException is propagated. */
     static BaseFile getSourceFileUsingTool(ExecutionContext context, String toolID, String _class = STANDARD_FILE_CLASS)
-        throws UnexpectedExecutionResultException, ExecutionException {
+            throws UnexpectedExecutionResultException, ExecutionException {
         List<String> executionOutput = ExecutionService.instance.runDirect(context, toolID)
         if (executionOutput.size() != 1) {
             throw new UnexpectedExecutionResultException("SourceFile instantiation from tool output failed", executionOutput)
@@ -253,36 +260,52 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
     /** Run a tool to returns a list of filenames that will be instantiated as file objects of STANDARD_FILE_CLASS by default.
      *  The tool should return an arbitary number of lines with filenames. If no line is returned, an empty list is returned. */
     static List<BaseFile> getSourceFilesUsingTool(ExecutionContext context, String toolID, String _class = STANDARD_FILE_CLASS)
-        throws ExecutionException {
+            throws ExecutionException {
         return ExecutionService.instance.runDirect(context, toolID).collect {
             getSourceFile(context, it, _class)
         } as List<BaseFile>
     }
 
-    protected File path;
+    /**
+     * API Level 3.2+
+     */
+    static List<BaseFile> getSourceFiles(ExecutionContext context, File baseFolder, Wildcard wildcard, String _class = STANDARD_FILE_CLASS) {
+        List<File> files = FileSystemAccessProvider.instance.listFilesUsingWildcards(baseFolder, wildcard.wildcard)
+        files.collect { getSourceFile(context, it.absolutePath, _class) }
+    }
 
-    protected final List<BaseFile> parentFiles = new LinkedList<>();
+    /**
+     * API Level 3.2+
+     */
+    static List<BaseFile> getSourceFiles(ExecutionContext context, File baseFolder, Regex regex, RegexSearchDepth depth, String _class = STANDARD_FILE_CLASS) {
+        List<File> files = FileSystemAccessProvider.instance.listFilesUsingRegex(baseFolder, regex.regex, depth)
+        files.collect { getSourceFile(context, it.absolutePath, _class) }
+    }
+
+    protected File path
+
+    protected final List<BaseFile> parentFiles = new LinkedList<>()
 
     /**
      * A BaseFile object can be grouped into one or more groups.
      */
-    protected final List<FileGroup> fileGroups = new LinkedList<FileGroup>();
+    protected final List<FileGroup> fileGroups = new LinkedList<FileGroup>()
 
-    protected FS fileStageSettings;
+    protected FS fileStageSettings
 
-    private boolean valid;
+    private boolean valid
 
     /**
      * This list keeps a reference to all jobs which tried to create this file.
      * A file can exist only once but the attempt to create it could be done in multiple previous jobs!
      */
-    private final List<BEJob> listOfParentJobs = new LinkedList<BEJob>();
+    private final List<BEJob> listOfParentJobs = new LinkedList<BEJob>()
 
     /**
      * This list keeps a reference to all processes which tried to create this file.
      * A file can exist only once but the attempt to create it could be done in multiple previous processes!
      */
-    private transient final List<ExecutionContext> listOfParentProcesses = new LinkedList<ExecutionContext>();
+    private transient final List<ExecutionContext> listOfParentProcesses = new LinkedList<ExecutionContext>()
     /**
      * Upon execution a file may be marked as temporary. This means that a file
      * might be deleted automatically by Roddy with some sort of cleanup job or
@@ -295,84 +318,84 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * targetfile) and to evaluate this file on rerun. But this can also
      * lead to problems.
      */
-    private boolean isTemporaryFile;
+    private boolean isTemporaryFile
 
-    private Boolean isReadable = null;
+    private Boolean isReadable = null
 
-    private boolean isSourceFile = false;
+    private boolean isSourceFile = false
 
-    private FilenamePattern appliedFilenamePattern = null;
+    private FilenamePattern appliedFilenamePattern = null
 
-    private String idxInFileGroup = null;
+    private String idxInFileGroup = null
 
     private ConstructionHelperForBaseFiles helperObject = null
 
     protected BaseFile(ConstructionHelperForBaseFiles helper) {
-        super(helper.context);
-        executionContext.addFile(this);
+        super(helper.context)
+        executionContext.addFile(this)
         idxInFileGroup = helper.indexInFileGroup
         this.helperObject = helper
 
         if (helper instanceof ConstructionHelperForGenericCreation) { //Manual creation is currently intrinsic.
-            ConstructionHelperForGenericCreation _helper = helper as ConstructionHelperForGenericCreation;
+            ConstructionHelperForGenericCreation _helper = helper as ConstructionHelperForGenericCreation
             if (_helper.parentObject instanceof FileGroup) {
-                parentFiles.addAll((_helper.parentObject as FileGroup).getFilesInGroup());
+                parentFiles.addAll((_helper.parentObject as FileGroup).getFilesInGroup())
                 this.fileStageSettings = (FS) _helper.fileStageSettings
             } else if (_helper.parentObject instanceof BaseFile) {
-                parentFiles.add(_helper.parentObject as BaseFile);
-                this.fileStageSettings = (FS) (_helper.fileStageSettings ?: (_helper.parentObject as BaseFile)?.fileStageSettings ?: null);
+                parentFiles.add(_helper.parentObject as BaseFile)
+                this.fileStageSettings = (FS) (_helper.fileStageSettings ?: (_helper.parentObject as BaseFile)?.fileStageSettings ?: null)
             }
-            Tuple2<File, FilenamePattern> fnresult = getFilename(this, _helper.selectionTag);
+            Tuple2<File, FilenamePattern> fnresult = getFilename(this, _helper.selectionTag)
             if (fnresult) {
                 this.path = fnresult.x
                 this.appliedFilenamePattern = fnresult.y
             }
         } else if (helper instanceof ConstructionHelperForSourceFiles) {
-            ConstructionHelperForSourceFiles _helper = helper as ConstructionHelperForSourceFiles;
+            ConstructionHelperForSourceFiles _helper = helper as ConstructionHelperForSourceFiles
 
-            this.fileStageSettings = (FS) _helper.fileStageSettings;
-            this.path = _helper.getPath();
-            setAsSourceFile();
+            this.fileStageSettings = (FS) _helper.fileStageSettings
+            this.path = _helper.getPath()
+            setAsSourceFile()
         } else {
             //Do not allow custom classes.
-            throw new RuntimeException("It is not allowed to use custom Construction Helper classes for BaseFile objects");
+            throw new RuntimeException("It is not allowed to use custom Construction Helper classes for BaseFile objects")
         }
 
-        this.setCreatingJobsResult(helper.jobResult);
-        determineFileValidityBasedOnContextLevel(executionContext);
+        this.setCreatingJobsResult(helper.jobResult)
+        determineFileValidityBasedOnContextLevel(executionContext)
     }
 
     /** A copy constructor for something like "extending" classes **/
     protected BaseFile(BaseFile parent) {
-        super(parent.executionContext);
-        this.fileStageSettings = parent.fileStageSettings;
-        this.path = parent.path;
-        this.parentFiles += parent.parentFiles;
-        this.fileGroups += parent.fileGroups;
-        this.valid = parent.valid;
-        this.listOfParentJobs += parent.listOfParentJobs;
-        this.listOfParentProcesses += parent.listOfParentProcesses;
-        this.isTemporaryFile = parent.isTemporaryFile;
-        this.isReadable = parent.isReadable;
-        this.isSourceFile = parent.isSourceFile;
-        this.appliedFilenamePattern = parent.appliedFilenamePattern;
+        super(parent.executionContext)
+        this.fileStageSettings = parent.fileStageSettings
+        this.path = parent.path
+        this.parentFiles += parent.parentFiles
+        this.fileGroups += parent.fileGroups
+        this.valid = parent.valid
+        this.listOfParentJobs += parent.listOfParentJobs
+        this.listOfParentProcesses += parent.listOfParentProcesses
+        this.isTemporaryFile = parent.isTemporaryFile
+        this.isReadable = parent.isReadable
+        this.isSourceFile = parent.isSourceFile
+        this.appliedFilenamePattern = parent.appliedFilenamePattern
         this.idxInFileGroup = parent.idxInFileGroup
     }
 
     private void determineFileValidityBasedOnContextLevel(ExecutionContext executionContext) {
         switch (executionContext.getExecutionContextLevel()) {
             case ExecutionContextLevel.QUERY_STATUS:
-                valid = !checkFileValidity();
-                break;
+                valid = !checkFileValidity()
+                break
             case ExecutionContextLevel.RERUN:
-                valid = !checkFileValidity();
-                break;
+                valid = !checkFileValidity()
+                break
             case ExecutionContextLevel.TESTRERUN:
-                valid = !checkFileValidity();
-                break;
+                valid = !checkFileValidity()
+                break
             case ExecutionContextLevel.RUN:
-                valid = true;
-                break;
+                valid = true
+                break
         }
     }
 
@@ -382,19 +405,19 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
     }
 
     final void addFileGroup(FileGroup fg) {
-        this.fileGroups.add(fg);
+        this.fileGroups.add(fg)
     }
 
     final List<FileGroup> getFileGroups() {
-        return this.fileGroups;
+        return this.fileGroups
     }
 
     final List<BaseFile> getNeighbourFiles() {
-        List<BaseFile> neighbourFiles = new LinkedList<BaseFile>();
+        List<BaseFile> neighbourFiles = new LinkedList<BaseFile>()
         for (FileGroup fg : fileGroups) {
-            neighbourFiles.addAll(fg.getFilesInGroup());
+            neighbourFiles.addAll(fg.getFilesInGroup())
         }
-        return neighbourFiles;
+        return neighbourFiles
     }
 
     /**
@@ -410,15 +433,15 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @return
      */
     boolean checkFileValidity() {
-        return true;
+        return true
     }
 
     boolean isSourceFile() {
-        return isSourceFile;
+        return isSourceFile
     }
 
     void setAsSourceFile() {
-        isSourceFile = true;
+        isSourceFile = true
     }
 
     boolean hasIndexInFileGroup() {
@@ -441,12 +464,12 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      */
     final boolean isFileReadable() {
         if (isReadable == null)
-            isReadable = FileSystemAccessProvider.getInstance().isReadable(this);
-        return isReadable;
+            isReadable = FileSystemAccessProvider.getInstance().isReadable(this)
+        return isReadable
     }
 
     final void isFileReadable(boolean readable) {
-        isReadable = readable;
+        isReadable = readable
     }
 
     /**
@@ -454,7 +477,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * <p>
      * The value will not change during one run, so caching is ok.
      */
-    private Boolean _cacheIsFileValid = null;
+    private Boolean _cacheIsFileValid = null
 
     /**
      * Combines isFileReadable and isFileValid.
@@ -468,25 +491,25 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
     final boolean isFileValid() {
         //TODO Check for file sizes < 200Byte!
         if (_cacheIsFileValid == null) {
-            _cacheIsFileValid = getExecutionContext().getRuntimeService().isFileValid(this);
+            _cacheIsFileValid = getExecutionContext().getRuntimeService().isFileValid(this)
         }
-        return _cacheIsFileValid;
+        return _cacheIsFileValid
     }
 
     final void setFileIsValid() {
-        _cacheIsFileValid = true;
+        _cacheIsFileValid = true
     }
 
     void setFileStage(FS fileStage) {
-        this.fileStageSettings = fileStage;
+        this.fileStageSettings = fileStage
     }
 
     FS getFileStage() {
-        return fileStageSettings;
+        return fileStageSettings
     }
 
     File getPath() {
-        return path;
+        return path
     }
 
     /**
@@ -495,15 +518,15 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @param path
      */
     void setPath(File path) {
-        this.path = path;
+        this.path = path
     }
 
     String getAbsolutePath() {
-        return path.getAbsolutePath();
+        return path.getAbsolutePath()
     }
 
     String getContainingFolder() {
-        return path.getParent();
+        return path.getParent()
     }
 
     /**
@@ -512,25 +535,25 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @return
      */
     List<BaseFile> getParentFiles() {
-        return new LinkedList<BaseFile>(parentFiles);
+        return new LinkedList<BaseFile>(parentFiles)
     }
 
     void setParentFiles(List<BaseFile> parentfiles) {
-        setParentFiles(parentfiles, false);
+        setParentFiles(parentfiles, false)
     }
 
     void setParentFiles(List<BaseFile> parentfiles, boolean resetFilename) {
-        this.parentFiles.clear();
-        this.parentFiles.addAll(parentfiles);
+        this.parentFiles.clear()
+        this.parentFiles.addAll(parentfiles)
         if (resetFilename) {
-            File temp = path;
-            Tuple2<File, FilenamePattern> fnresult = getFilename(this);
-            this.path = fnresult?.x;
-            this.appliedFilenamePattern = fnresult?.y;
+            File temp = path
+            Tuple2<File, FilenamePattern> fnresult = getFilename(this)
+            this.path = fnresult?.x
+            this.appliedFilenamePattern = fnresult?.y
             if (path == null) {
                 //TODO Also this should be handled somehow else. It is occurring much too often.
 //                getExecutionContext().addErrorEntry(ExecutionContextError.EXECUTION_FILECREATION_PATH_NOTSET.expand("Setting a new filename with parent files returned null for " + this.getClass().getName() + " returning to " + (temp != null ? temp.getAbsolutePath() : "null"), Level.WARNING));
-                path = temp;
+                path = temp
             }
         }
     }
@@ -538,19 +561,19 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
     private BaseFile findAncestorOfType(Class clzType) {
         for (BaseFile bf : parentFiles) {
             if (bf.getClass() == clzType) {
-                return bf;
+                return bf
             } else {
-                return bf.findAncestorOfType(clzType);
+                return bf.findAncestorOfType(clzType)
             }
         }
-        return null;
+        return null
     }
 
     /**
      * Tell Roddy that this file is temporary and can be deleted if dependent files are valid.
      */
     void setAsTemporaryFile() {
-        this.isTemporaryFile = true;
+        this.isTemporaryFile = true
     }
 
     /**
@@ -559,7 +582,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @return
      */
     boolean isTemporaryFile() {
-        return isTemporaryFile;
+        return isTemporaryFile
     }
 
     /**
@@ -582,22 +605,21 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @return
      */
     static Tuple2<File, FilenamePattern> getFilename(BaseFile baseFile) {
-        return getFilename(baseFile, FilenamePattern.DEFAULT_SELECTION_TAG);
+        return getFilename(baseFile, DEFAULT)
     }
 
-    private
-    static Map<Class, LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>>> _classPatternsCache = new LinkedHashMap<>();
+    private static Map<Class, LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>>> _classPatternsCache = new LinkedHashMap<>()
 
-    static LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>> loadAvailableFilenamePatterns(BaseFile baseFile, ExecutionContext context) {
-        Configuration cfg = context.getConfiguration();
-        LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>> availablePatterns = new LinkedHashMap<>();
+    static synchronized LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>> loadAvailableFilenamePatterns(BaseFile baseFile, ExecutionContext context) {
+        Configuration cfg = context.getConfiguration()
+        LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>> availablePatterns = new LinkedHashMap<>()
         if (!_classPatternsCache.containsKey(baseFile.getClass())) {
-            availablePatterns = new LinkedHashMap<>();
-            _classPatternsCache.put(baseFile.getClass(), availablePatterns);
+            availablePatterns = new LinkedHashMap<>()
+            _classPatternsCache.put(baseFile.getClass(), availablePatterns)
             FilenamePatternDependency.values().each { FilenamePatternDependency it -> availablePatterns[it] = new LinkedList<FilenamePattern>() }
             for (FilenamePattern fp : cfg.getFilenamePatterns().getAllValuesAsList()) {
                 if (fp.getCls() == baseFile.getClass()) {
-                    availablePatterns[fp.getFilenamePatternDependency()] << fp;
+                    availablePatterns[fp.getFilenamePatternDependency()] << fp
                 }
             }
             Collection<FilenamePattern> allFoundPatterns = availablePatterns.values().sum() as Collection<FilenamePattern>
@@ -608,7 +630,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
                 logger.severe("Could not find any matching filename patterns for file class ${baseFile.class.name}")
             }
         } else {
-            availablePatterns = _classPatternsCache.get(baseFile.getClass());
+            availablePatterns = _classPatternsCache.get(baseFile.getClass())
         }
         return availablePatterns
     }
@@ -627,8 +649,8 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      */
     static Tuple2<File, FilenamePattern> getFilename(BaseFile baseFile, String selectionTag) {
         if (!selectionTag)
-            selectionTag = "default";
-        Tuple2<File, FilenamePattern> patternResult = new Tuple2<>(null, null);
+            selectionTag = DEFAULT
+        Tuple2<File, FilenamePattern> patternResult = new Tuple2<>(null, null)
         try {
 
             //Find the correct pattern:
@@ -636,18 +658,20 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
             // If not throw an exception
             // Look if there is only one available: Easy, use this
             // onMethod, sourcefile, filestage
-            ExecutionContext context = baseFile.getExecutionContext();
-            LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>> availablePatterns = loadAvailableFilenamePatterns(baseFile, context);
+            ExecutionContext context = baseFile.getExecutionContext()
+            LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>> availablePatterns = loadAvailableFilenamePatterns(baseFile, context)
 
-            patternResult = findFilenameFromOnScriptParameterPatterns(baseFile, availablePatterns[FilenamePatternDependency.onScriptParameter], selectionTag) ?:
-                    findFilenameFromOnMethodPatterns(baseFile, availablePatterns[FilenamePatternDependency.onMethod], selectionTag) ?:
-                            findFilenameFromOnToolIDPatterns(baseFile, availablePatterns[FilenamePatternDependency.onTool], selectionTag) ?:
-                                    findFilenameFromSourcefilePatterns(baseFile, availablePatterns[FilenamePatternDependency.derivedFrom], selectionTag) ?:
-                                            findFilenameFromGenericPatterns(baseFile, availablePatterns[FilenamePatternDependency.FileStage], selectionTag);
+            Map<FilenamePatternDependency, Tuple2<File, FilenamePattern>> results = [:]
+            results[onScriptParameter] = findFilenameFromOnScriptParameterPatterns(baseFile, availablePatterns[onScriptParameter], selectionTag)
+            results[onMethod] = findFilenameFromOnMethodPatterns(baseFile, availablePatterns[onMethod], selectionTag)
+            results[onTool] = findFilenameFromOnToolIDPatterns(baseFile, availablePatterns[onTool], selectionTag)
+            results[derivedFrom] = findFilenameFromSourcefilePatterns(baseFile, availablePatterns[derivedFrom], selectionTag)
+            results[FilenamePatternDependency.FileStage] = findFilenameFromGenericPatterns(baseFile, availablePatterns[FilenamePatternDependency.FileStage], selectionTag)
 
+            patternResult = results[onScriptParameter] ?: results[onMethod] ?: results[onTool] ?: results[derivedFrom] ?: results[FilenamePatternDependency.FileStage]
             // Do some further checks for selection tags.
             // Two cases. If the selectiontag is default and if it is not. If the selectiontag is not null
-            if ((selectionTag.equals("default") && (!patternResult || patternResult.x == null)) || patternResult.x == null) {
+            if ((selectionTag == DEFAULT && (!patternResult || patternResult.x == null)) || patternResult.x == null) {
 
                 StringBuilder sb = new StringBuilder("Could not find any filename pattern for a file object of class ${baseFile.class.simpleName}\n")
 
@@ -660,65 +684,65 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
                         }
                 }.flatten().join("\n\t")
 
-                throw new ConfigurationError(sb.toString(), baseFile.executionContext.configuration);
+                throw new ConfigurationError(sb.toString(), baseFile.executionContext.configuration)
             } else {
                 //Check if the path exists and create it if necessary.
                 if (context.getExecutionContextLevel().allowedToSubmitJobs && !FileSystemAccessProvider.getInstance().checkDirectory(patternResult.x.getParentFile(), context, true)) {
-                    throw new IOException("Output path could not be created for file: " + baseFile);
+                    throw new IOException("Output path could not be created for file: " + baseFile)
                 }
             }
         } catch (IOException ex) {
             // baseFile.getExecutionContext().addErrorEntry(ExecutionContextError.EXECUTION_PATH_INACCESSIBLE.expand(baseFile.absolutePath))
             // } catch (RuntimeException ex) {
         } finally {
-            return patternResult;
+            return patternResult
         }
     }
 
     private
     static Tuple2<File, FilenamePattern> findFilenameFromGenericPatterns(BaseFile baseFile, LinkedList<FilenamePattern> availablePatterns, String selectionTag) {
-        Tuple2<File, FilenamePattern> result = null;
-        File filename = null;
-        FilenamePattern appliedPattern = null;
+        Tuple2<File, FilenamePattern> result = null
+        File filename = null
+        FilenamePattern appliedPattern = null
 
-        if (!availablePatterns) return result;
+        if (!availablePatterns) return result
 
         for (FilenamePattern _fp : availablePatterns) {
-            FileStageFilenamePattern fp = _fp as FileStageFilenamePattern;
+            FileStageFilenamePattern fp = _fp as FileStageFilenamePattern
             if ((fp.getFileStage() == FileStage.GENERIC || fp.getFileStage() == baseFile.getFileStage().getStage()) && fp.getSelectionTag().equals(selectionTag)) {
-                filename = new File(fp.apply(baseFile));
-                appliedPattern = fp;
-                break;
+                filename = new File(fp.apply(baseFile))
+                appliedPattern = fp
+                break
             }
         }
 
-        if (!filename || !appliedPattern) return null;
-        return new Tuple2<>(filename, appliedPattern);
+        if (!filename || !appliedPattern) return null
+        return new Tuple2<>(filename, appliedPattern)
     }
 
     private
     static Tuple2<File, FilenamePattern> findFilenameFromSourcefilePatterns(BaseFile baseFile, LinkedList<FilenamePattern> availablePatterns, String selectionTag) {
-        Tuple2<File, FilenamePattern> result = null;
-        File filename = null;
-        FilenamePattern appliedPattern = null;
+        Tuple2<File, FilenamePattern> result = null
+        File filename = null
+        FilenamePattern appliedPattern = null
 
         if (availablePatterns && baseFile.parentFiles.size() > 0) {
             for (FilenamePattern fp : availablePatterns) {
                 for (BaseFile bf : (List<BaseFile>) baseFile.parentFiles) {
                     if (bf.getClass() == ((DerivedFromFilenamePattern) fp).getDerivedFromCls() && fp.getSelectionTag().equals(selectionTag)) {
                         if (fp.doesAcceptFileArrays()) {
-                            filename = new File(fp.apply([baseFile] as BaseFile[]));
+                            filename = new File(fp.apply([baseFile] as BaseFile[]))
                         } else {
-                            filename = new File(fp.apply((BaseFile) baseFile));
+                            filename = new File(fp.apply((BaseFile) baseFile))
                         }
-                        appliedPattern = fp;
-                        break;
+                        appliedPattern = fp
+                        break
                     }
                 }
             }
         }
-        if (!filename || !appliedPattern) return null;
-        return new Tuple2<>(filename, appliedPattern);
+        if (!filename || !appliedPattern) return null
+        return new Tuple2<>(filename, appliedPattern)
     }
 
     /**
@@ -733,35 +757,35 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      */
     private
     static Tuple2<File, FilenamePattern> findFilenameFromOnMethodPatterns(BaseFile baseFile, LinkedList<FilenamePattern> availablePatterns, String selectionTag) {
-        Tuple2<File, FilenamePattern> result = null;
-        File filename = null;
-        FilenamePattern appliedPattern = null;
+        Tuple2<File, FilenamePattern> result = null
+        File filename = null
+        FilenamePattern appliedPattern = null
 
         //Find the called basefile method, if on_method patterns are available.
-        if (!availablePatterns) return result;
+        if (!availablePatterns) return result
 
-        List<StackTraceElement> steByMethod = getAndFilterStackElementsToWorkflowInstance();
+        List<StackTraceElement> steByMethod = getAndFilterStackElementsToWorkflowInstance()
 
         traceLoop:
         for (StackTraceElement ste : steByMethod) {
             for (FilenamePattern _fp : availablePatterns) {
-                OnMethodFilenamePattern fp = _fp as OnMethodFilenamePattern;
+                OnMethodFilenamePattern fp = _fp as OnMethodFilenamePattern
 
-                String cmName = fp.getCalledMethodsName().getName();
-                String cmClass = fp.getCalledMethodsClass().getName();
+                String cmName = fp.getCalledMethodsName().getName()
+                String cmClass = fp.getCalledMethodsClass().getName()
                 if (cmName.equals(ste.getMethodName())
                         && cmClass.equals(ste.getClassName())
                         && fp.getSelectionTag().equals(selectionTag)) {
                     //OOOOOH LOOK try this!
-                    File tempFN = new File(fp.apply(baseFile));
-                    appliedPattern = fp;
-                    filename = tempFN;
-                    break traceLoop;
+                    File tempFN = new File(fp.apply(baseFile))
+                    appliedPattern = fp
+                    filename = tempFN
+                    break traceLoop
                 }
             }
         }
-        if (!filename || !appliedPattern) return null;
-        return new Tuple2<>(filename, appliedPattern);
+        if (!filename || !appliedPattern) return null
+        return new Tuple2<>(filename, appliedPattern)
     }
 
     /**
@@ -777,24 +801,24 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      */
     private
     static Tuple2<File, FilenamePattern> findFilenameFromOnToolIDPatterns(BaseFile baseFile, LinkedList<FilenamePattern> availablePatterns, String selectionTag) {
-        Tuple2<File, FilenamePattern> result = null;
-        File filename = null;
-        FilenamePattern appliedPattern = null;
+        Tuple2<File, FilenamePattern> result = null
+        File filename = null
+        FilenamePattern appliedPattern = null
 
         //Find the called basefile method, if on_method patterns are available.
-        if (!availablePatterns) return result;
+        if (!availablePatterns) return result
 
-        String id = baseFile.getExecutionContext().getCurrentExecutedTool().getID();
+        String id = baseFile.getExecutionContext().getCurrentExecutedTool().getID()
         for (FilenamePattern _fp : availablePatterns) {
-            OnToolFilenamePattern fp = _fp as OnToolFilenamePattern;
+            OnToolFilenamePattern fp = _fp as OnToolFilenamePattern
             if (fp.getCalledScriptID().equals(id) && fp.selectionTag == selectionTag) {
-                appliedPattern = fp;
-                filename = new File(fp.apply(baseFile));
-                break;
+                appliedPattern = fp
+                filename = new File(fp.apply(baseFile))
+                break
             }
         }
-        if (!filename || !appliedPattern) return null;
-        return new Tuple2<>(filename, appliedPattern);
+        if (!filename || !appliedPattern) return null
+        return new Tuple2<>(filename, appliedPattern)
     }
 
     /**
@@ -805,10 +829,10 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      */
     private
     static Tuple2<File, FilenamePattern> findFilenameFromOnScriptParameterPatterns(BaseFile baseFile, LinkedList<FilenamePattern> availablePatterns, String selectionTag) {
-        Tuple2<File, FilenamePattern> result = null;
+        Tuple2<File, FilenamePattern> result = null
 
         //Find the called basefile method, if on_method patterns are available.
-        if (!availablePatterns) return result;
+        if (!availablePatterns) return result
 
         ConstructionHelperForGenericCreation helper = baseFile.helperObject as ConstructionHelperForGenericCreation
 
@@ -823,10 +847,11 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
 
                 return parameterFound && scriptValid
         }
+        if (!appliedPattern) return null
         File filename = new File(appliedPattern.apply(baseFile))
 
-        if (!filename || !appliedPattern) return null;
-        return new Tuple2<>(filename, appliedPattern);
+        if (!filename) return null
+        return new Tuple2<>(filename, appliedPattern)
     }
 
     /**
@@ -834,35 +859,35 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @return
      */
     private static List<StackTraceElement> getAndFilterStackElementsToWorkflowInstance() {
-        String calledBaseFileMethodName = null;
+        String calledBaseFileMethodName = null
         //Walk through the stack to get the method.
-        List<StackTraceElement> steByMethod = new LinkedList<>();
-        boolean constructorPassed = false;
+        List<StackTraceElement> steByMethod = new LinkedList<>()
+        boolean constructorPassed = false
         for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
             try {
                 //Skip several methods
 
-                String methodName = ste.getMethodName();
+                String methodName = ste.getMethodName()
                 if (methodName.equals("<init>")
                         || methodName.endsWith("getFilename")
                         || methodName.endsWith("getStackTrace")
                 ) {
-                    continue;
+                    continue
                 }
                 //Abort when the workflows execute method is called.
                 if ((ste.getClassName().equals(ExecutionContext.class.getName())
                         || Workflow.class.isAssignableFrom(LibrariesFactory.getGroovyClassLoader().loadClass(ste.getClassName())))
                         && methodName.equals("execute"))
-                    break;
+                    break
 
                 //In all other cases add the method.
 //                    if (constructorPassed)
-                steByMethod.add(ste);
+                steByMethod.add(ste)
             } catch (Exception ex) {
 
             }
         }
-        return steByMethod;
+        return steByMethod
     }
 
     /**
@@ -871,7 +896,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @param job
      */
     void addCreatingJob(BEJob job) {
-        listOfParentJobs.add(job);
+        listOfParentJobs.add(job)
     }
 
     /**
@@ -880,7 +905,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @param process
      */
     void addCreatingProcess(ExecutionContext process) {
-        listOfParentProcesses.add(process);
+        listOfParentProcesses.add(process)
     }
 
     /**
@@ -890,7 +915,7 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @return
      */
     List<BEJob> getListOfParentJobs() {
-        return new LinkedList<BEJob>(listOfParentJobs);
+        return new LinkedList<BEJob>(listOfParentJobs)
     }
 
     /**
@@ -900,11 +925,11 @@ abstract class BaseFile<FS extends FileStageSettings> extends FileObject {
      * @return
      */
     List<ExecutionContext> getListOfParentProcesses() {
-        return new LinkedList<ExecutionContext>(listOfParentProcesses);
+        return new LinkedList<ExecutionContext>(listOfParentProcesses)
     }
 
     @Override
     String toString() {
-        return "BaseFile of type " + getClass().getName() + " with path " + path;
+        return "BaseFile of type " + getClass().getName() + " with path " + path
     }
 }

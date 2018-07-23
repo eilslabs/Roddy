@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.knowledge.brawlworkflows
 
+import de.dkfz.roddy.Constants
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.config.AnalysisConfiguration
 import de.dkfz.roddy.config.Configuration
@@ -23,6 +24,7 @@ import de.dkfz.roddy.tools.RoddyConversionHelperMethods
 import java.lang.reflect.Field
 import java.lang.reflect.Type
 
+import static de.dkfz.roddy.Constants.DEFAULT
 import static de.dkfz.roddy.Constants.ENV_LINESEPARATOR as NEWLINE
 
 import java.lang.reflect.Method;
@@ -125,7 +127,7 @@ public class JBrawlWorkflow extends Workflow {
                     return false
                 }
                 String flagid = values[1];
-                Boolean defaultValue = values.size() == 4 && values[2] == "default" ? RoddyConversionHelperMethods.toBoolean(values[3], false) : false;
+                Boolean defaultValue = values.size() == 4 && values[2] == DEFAULT ? RoddyConversionHelperMethods.toBoolean(values[3], false) : false;
                 classBuilder << "    boolean $flagid = configuration.getConfigurationValues().getBoolean(\"$flagid\", ${defaultValue}); $NEWLINE"
             }
 
@@ -345,7 +347,13 @@ public class JBrawlWorkflow extends Workflow {
             if (outputParameters[0] instanceof ToolTupleParameter) {
 
                 ToolTupleParameter tupleParameter = (ToolTupleParameter) outputParameters[0]
-                String generics = tupleParameter.files.collect { ToolFileParameter tfp -> return tfp.fileClass }.join(", ")
+                String generics = tupleParameter.files.collect {
+                    ToolEntry.ToolParameterOfFiles tfp ->
+                        if (tfp instanceof ToolFileParameter)
+                            return ((ToolFileParameter)tfp).fileClass
+                        else if(tfp instanceof ToolFileGroupParameter)
+                            return ((ToolFileGroupParameter)tfp).genericFileClass
+                }.join(", ")
                 classOfFileObject = "de.dkfz.roddy.knowledge.files.Tuple" + tupleParameter.files.size() + "<$generics>";
             }
         }

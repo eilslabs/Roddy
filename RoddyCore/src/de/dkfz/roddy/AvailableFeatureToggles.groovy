@@ -63,7 +63,12 @@ enum AvailableFeatureToggles {
     /**
      * Fail, if strict mode is enabled and auto filenames would be created.
      */
-    FailOnAutoFilenames(false)
+    FailOnAutoFilenames(false),
+
+    /**
+     * Fail, if e.g. upon (test)rerun the first dry run QUERY_STATUS failed.
+     */
+    FailOnErroneousDryRuns(true )
 
     public final boolean defaultValue
 

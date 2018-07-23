@@ -1,5 +1,5 @@
 dependson=PluginBase:develop
 JDKVersion=1.8
 GroovyVersion=2.4
-RoddyAPIVersion=3.0
+RoddyAPIVersion=3.2
 

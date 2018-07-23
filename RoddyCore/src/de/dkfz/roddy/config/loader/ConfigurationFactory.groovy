@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.config.loader
 
+import de.dkfz.roddy.Constants
 import de.dkfz.roddy.Roddy
 import de.dkfz.roddy.StringConstants
 import de.dkfz.roddy.client.RoddyStartupOptions
@@ -13,10 +14,8 @@ import de.dkfz.roddy.config.*
 import de.dkfz.roddy.config.Configuration.ConfigurationType
 import de.dkfz.roddy.config.converters.BashConverter
 import de.dkfz.roddy.config.converters.YAMLConverter
-import de.dkfz.roddy.config.validation.XSDValidator
 import de.dkfz.roddy.core.Project
 import de.dkfz.roddy.core.ProjectLoaderException
-import de.dkfz.roddy.core.RuntimeService
 import de.dkfz.roddy.core.Workflow
 import de.dkfz.roddy.knowledge.brawlworkflows.JBrawlWorkflow
 import de.dkfz.roddy.knowledge.files.BaseFile
@@ -571,7 +570,7 @@ class ConfigurationFactory {
         String classSimpleName = filename.@class.text()
         String fnDerivedFrom = filename.@derivedFrom.text()
         String pattern = filename.@pattern.text()
-        String selectionTag = extractAttributeText(filename, "selectiontag", FilenamePattern.DEFAULT_SELECTION_TAG)
+        String selectionTag = extractAttributeText(filename, "selectiontag", Constants.DEFAULT)
 
         Tuple3<Class, Boolean, Integer> parentClassResult = loadPatternClass(pkg, fnDerivedFrom)
         Tuple3<Class, Boolean, Integer> classResult = loadPatternClass(pkg, classSimpleName, parentClassResult.x)
@@ -625,21 +624,14 @@ class ConfigurationFactory {
     static FilenamePattern readOnMethodFilenamePattern(String pkg, NodeChild filename) {
         String methodName = filename.@onMethod.text()
         String pattern = filename.@pattern.text()
-        String selectionTag = extractAttributeText(filename, "selectiontag", FilenamePattern.DEFAULT_SELECTION_TAG)
+        String selectionTag = extractAttributeText(filename, "selectiontag", Constants.DEFAULT)
         Class<FileObject> _cls = loadPatternClass(pkg, filename.@class.text(), BaseFile).x
         Class<FileObject> calledClass = _cls
         if (methodName.contains(".")) { //Different class as source class!
             String[] stuff = methodName.split(SPLIT_STOP)
-            String className = stuff[0]
-            String classPkg = null
-            if (stuff.length > 2) { //We have a package specified.
-                classPkg = stuff[0..-3].join(".")
-                className = stuff[-2]
-            }
-            if (classPkg == null) classPkg = pkg
-            String calledClassName = (classPkg != null ? classPkg + "." : "") + className
-            calledClass = (Class<FileObject>) LibrariesFactory.getInstance().loadClass(calledClassName)
+            String className = stuff[0 .. -2].join(".")
             methodName = stuff[-1]
+            calledClass = LibrariesFactory.instance.classLoaderHelper.searchForClass(className)
         }
         Method _method = null
         for (Method m : calledClass.getMethods()) {
@@ -689,7 +681,7 @@ class ConfigurationFactory {
         Class<FileObject> _cls = loadPatternClass(pkg, filename.@class.text(), BaseFile).x
         String scriptName = filename.@onTool.text()
         String pattern = filename.@pattern.text()
-        String selectionTag = extractAttributeText(filename, "selectiontag", FilenamePattern.DEFAULT_SELECTION_TAG)
+        String selectionTag = extractAttributeText(filename, "selectiontag", Constants.DEFAULT)
         FilenamePattern fp = new OnToolFilenamePattern(_cls, scriptName, pattern, selectionTag)
         return fp
     }
@@ -699,7 +691,7 @@ class ConfigurationFactory {
         Class<FileObject> _cls = loadPatternClass(pkg, filename.@class.text(), BaseFile).x
         String fileStage = filename.@fileStage.text()
         String pattern = filename.@pattern.text()
-        String selectionTag = extractAttributeText(filename, "selectiontag", FilenamePattern.DEFAULT_SELECTION_TAG)
+        String selectionTag = extractAttributeText(filename, "selectiontag", Constants.DEFAULT)
         FileStage fs = null
 
         if (fileStage.contains(".")) { //Load without a base package / class

@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.config
 
+import de.dkfz.roddy.Constants
 import de.dkfz.roddy.config.loader.ConfigurationFactory
 import de.dkfz.roddy.core.ExecutionContext
 import de.dkfz.roddy.core.ContextResource
@@ -20,6 +21,8 @@ import org.junit.ClassRule
 import org.junit.Ignore
 import org.junit.After
 import org.junit.Test
+
+import static de.dkfz.roddy.Constants.DEFAULT
 
 /**
  * Created by heinold on 07.01.2016.
@@ -41,7 +44,7 @@ class FilenamePatternTest {
         LibrariesFactory.getInstance().loadLibraries(LibrariesFactory.buildupPluginQueue(LibrariesFactoryTest.callLoadMapOfAvailablePlugins(), "DefaultPlugin").values() as List)
         ConfigurationFactory.initialize(LibrariesFactory.getInstance().getLoadedPlugins().collect { it -> it.getConfigurationDirectory() })
 
-        final Configuration mockupConfig = new Configuration(new PreloadedConfiguration(null, Configuration.ConfigurationType.OTHER, "default", "", "", null, "", ResourceSetSize.l, null, null, null, null), ConfigurationFactory.getInstance().getConfiguration("default")) {
+        final Configuration mockupConfig = new Configuration(new PreloadedConfiguration(null, Configuration.ConfigurationType.OTHER, DEFAULT, "", "", null, "", ResourceSetSize.l, null, null, null, null), ConfigurationFactory.getInstance().getConfiguration(DEFAULT)) {
             @Override
             File getSourceToolPath(String tool) {
                 if (tool == "wrapinScript")
@@ -67,7 +70,7 @@ class FilenamePatternTest {
 
     @Test
     void testFilenamePatternWithSelectionByToolID() {
-        FilenamePattern fp = new OnToolFilenamePattern(testClass, "RoddyTests", "/tmp/RoddyTests/testFileResult.sh", "default")
+        FilenamePattern fp = new OnToolFilenamePattern(testClass, "RoddyTests", "/tmp/RoddyTests/testFileResult.sh", DEFAULT)
         BaseFile.ConstructionHelperForGenericCreation helper = new BaseFile.ConstructionHelperForGenericCreation(mockedContext, mockedContext.getConfiguration().getTools().getValue("RoddyTests"), "RoddyTests", null, null, new TestFileStageSettings(), null)
         String filename = fp.apply((BaseFile) testClass.newInstance(helper))
         assert filename == "/tmp/RoddyTests/testFileResult.sh"
@@ -114,7 +117,7 @@ class FilenamePatternTest {
     public void testJobCreationWithFileUsingToolIDForNamePattern() {
         contextResource.createMockupJobManager()
 
-        FilenamePattern fp = new OnToolFilenamePattern(testClass, "RoddyTests", "/tmp/RoddyTests/testFileResult.sh", "default")
+        FilenamePattern fp = new OnToolFilenamePattern(testClass, "RoddyTests", "/tmp/RoddyTests/testFileResult.sh", DEFAULT)
         mockedContext.getConfiguration().getFilenamePatterns().add(fp)
         BaseFile sourceFile = BaseFile.constructSourceFile(GenericFile, new File("/tmp/RoddyTests/output/abcfile"), mockedContext)
         BaseFile result = (BaseFile) GenericMethod.callGenericTool("RoddyTests", sourceFile)
@@ -179,7 +182,7 @@ class FilenamePatternTest {
 
     private FilenamePattern createFilenamePattern() {
         String srcFull
-        def fpattern = new FilenamePattern(LibrariesFactory.getInstance().loadRealOrSyntheticClass("FPTTestClass", "BaseFile"), srcFull, "default") {
+        def fpattern = new FilenamePattern(LibrariesFactory.getInstance().loadRealOrSyntheticClass("FPTTestClass", "BaseFile"), srcFull, DEFAULT) {
 
             @Override
             String getID() { return null }

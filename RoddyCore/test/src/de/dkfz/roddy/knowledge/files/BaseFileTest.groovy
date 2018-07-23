@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.knowledge.files
 
+import de.dkfz.roddy.Constants
 import de.dkfz.roddy.config.*
 import de.dkfz.roddy.config.loader.ConfigurationFactory
 import de.dkfz.roddy.core.ExecutionContext
@@ -22,6 +23,8 @@ import org.junit.Rule
 import org.junit.Test
 
 import java.lang.reflect.Method
+
+import static de.dkfz.roddy.Constants.DEFAULT
 
 /**
  * Created by heinold on 20.01.16.
@@ -64,7 +67,7 @@ class BaseFileTest {
         LibrariesFactory.getInstance().loadLibraries(LibrariesFactory.buildupPluginQueue(LibrariesFactoryTest.callLoadMapOfAvailablePlugins(), "DefaultPlugin").values() as List);
         ConfigurationFactory.initialize(LibrariesFactory.getInstance().getLoadedPlugins().collect { it -> it.getConfigurationDirectory() })
 
-        final Configuration mockupConfig = new Configuration(new PreloadedConfiguration(null, Configuration.ConfigurationType.OTHER, "default", "", "", null, "", ResourceSetSize.l, null, null, null, null), ConfigurationFactory.getInstance().getConfiguration("default")) {
+        final Configuration mockupConfig = new Configuration(new PreloadedConfiguration(null, Configuration.ConfigurationType.OTHER, DEFAULT, "", "", null, "", ResourceSetSize.l, null, null, null, null), ConfigurationFactory.getInstance().getConfiguration(DEFAULT)) {
             @Override
             File getSourceToolPath(String tool) {
                 if (tool == "wrapinScript")
@@ -148,7 +151,7 @@ class BaseFileTest {
         return getParsedFilenamePattern(patternXML).filename.getAt(0)
     }
 
-    de.dkfz.roddy.tools.Tuple2<File, FilenamePattern> callBaseFileFindFilenameDerivateMethod(String method, BaseFile obj, FilenamePatternDependency dependency, String tag = "default") {
+    de.dkfz.roddy.tools.Tuple2<File, FilenamePattern> callBaseFileFindFilenameDerivateMethod(String method, BaseFile obj, FilenamePatternDependency dependency, String tag = DEFAULT) {
         LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>> availableFilenamePatterns = BaseFile.loadAvailableFilenamePatterns(obj, mockedContext) as LinkedHashMap<FilenamePatternDependency, LinkedList<FilenamePattern>>;
         assert availableFilenamePatterns[dependency].size() == 1
 
@@ -238,7 +241,7 @@ class BaseFileTest {
 
         Method getFilenameMethod = BaseFile.getDeclaredMethod("getFilename", BaseFile, String);
         getFilenameMethod.setAccessible(true);
-        def filenamePatterns = getFilenameMethod.invoke(null, obj, "default")
+        def filenamePatterns = getFilenameMethod.invoke(null, obj, DEFAULT)
         assert filenamePatterns != null
     }
 

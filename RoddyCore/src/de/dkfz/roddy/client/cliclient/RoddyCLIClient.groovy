@@ -20,7 +20,7 @@ import de.dkfz.roddy.config.validation.WholeConfigurationValidator
 import de.dkfz.roddy.core.*
 import de.dkfz.roddy.execution.io.LocalExecutionService
 import de.dkfz.roddy.execution.io.SSHExecutionService
-import de.dkfz.roddy.execution.jobs.BEJob as BEJob
+import de.dkfz.roddy.execution.jobs.BEJob
 import de.dkfz.roddy.execution.jobs.Job
 import de.dkfz.roddy.execution.jobs.JobState
 import de.dkfz.roddy.execution.jobs.ProcessingParameters
@@ -543,9 +543,8 @@ public class RoddyCLIClient {
         final String separator = Constants.ENV_LINESEPARATOR;
         for (ExecutionContext ec : executionContexts) {
             Configuration configuration = ec.getConfiguration()
-            ConfigurationConverter.convertAutomatically(ec, configuration);
-            StringBuilder sb = new StringBuilder();
 
+            StringBuilder sb = new StringBuilder();
 
             Collection<Job> collectedJobs = ec.getExecutedJobs().findAll { Job job -> job.getJobID() != null && (rerun ? job.runResult?.successful : true) }
             def numberOfJobs = collectedJobs.size()
@@ -577,11 +576,11 @@ public class RoddyCLIClient {
 
                 sb << "    #FYELLOW#${job.getJobID()}:#CLEAR# ${job.getToolID()} [${resources}]" << separator;
 
-                for (k in job.parameters.keySet()) {
+                for (k in job.reportedParameters.keySet()) {
                     String _k = k;
                     if (k.length() > 25)
                         _k = k.substring(0, 23) + ".."
-                    String parm = job.parameters.get(k, "").replace(ec.getExecutionDirectory().getAbsolutePath(), "[ exDir]");
+                    String parm = job.reportedParameters.get(k, "").replace(ec.getExecutionDirectory().getAbsolutePath(), "[ exDir]");
                     parm = parm.replace(ec.getOutputDirectory().getAbsolutePath(), "[outDir]");
                     parm = parm.replace(ec.getInputDirectory().getAbsolutePath(), "[ inDir]");
                     if (parm.startsWith("parameterArray") && parm != "parameterArray=()") {

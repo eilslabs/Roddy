@@ -1,0 +1,30 @@
+<!--
+  ~ Copyright (c) 2018 DKFZ - ODCF
+  ~
+  ~ Distributed under the MIT License (license terms are at https://www.github.com/eilslabs/Roddy/LICENSE.txt).
+  -->
+
+<configuration name='simpleCohortWorkflowAnalysis'
+               description='A test analysis for local and remote roddy workflow tests.'
+               imports="testCorrectExecutionAnalysis"
+               configurationType='analysis'
+               class='de.dkfz.roddy.core.Analysis'
+               workflowClass='de.dkfz.roddy.knowledge.examples.SimpleCohortWorkflow'
+               runtimeServiceClass="de.dkfz.roddy.knowledge.examples.SimpleRuntimeService"
+               listOfUsedTools="testScript"
+               usedToolFolders="devel"
+               cleanupScript="cleanupScript">
+    <configurationvalues>
+        <cvalue name='analysisMethodNameOnInput' value='testCohortAnalysis' type='string'/>
+        <cvalue name='analysisMethodNameOnOutput' value='testCohortAnalysis' type='string'/>
+
+        <!-- Tell Roddy, that this is a cohort based workflow -->
+        <cvalue name='loadCohortDatasets' value='true' type='boolean'/>
+
+        <!-- Create tiny super cohort / cohort entries for tests -->
+        <cvalue name='sc1' value='c1,c2' type='string'/>
+        <cvalue name='c1' value='d1,d2' type='string'/>
+        <cvalue name='c2' value='d3,d4' type='string'/>
+
+    </configurationvalues>
+</configuration>

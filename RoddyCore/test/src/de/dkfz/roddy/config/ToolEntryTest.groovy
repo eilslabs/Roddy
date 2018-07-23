@@ -6,6 +6,7 @@
 
 package de.dkfz.roddy.config
 
+import de.dkfz.roddy.Constants
 import de.dkfz.roddy.config.ResourceSet
 import de.dkfz.roddy.config.ResourceSetSize
 import de.dkfz.roddy.tools.BufferValue
@@ -26,8 +27,8 @@ class ToolEntryTest extends GroovyTestCase {
 
     private ToolEntry createTestToolEntry() {
         def te = new ToolEntry("TestTool", "TestPath", "/SomewhereOverTheRainbow")
-        te.getResourceSets().add(new ResourceSet(ResourceSetSize.s, new BufferValue(1), 1, 1, new TimeUnit("01:00"), new BufferValue(1), "default", ""));
-        te.getResourceSets().add(new ResourceSet(ResourceSetSize.l, new BufferValue(1), 1, 1, new TimeUnit("01:00"), new BufferValue(1), "default", ""));
+        te.getResourceSets().add(new ResourceSet(ResourceSetSize.s, new BufferValue(1), 1, 1, new TimeUnit("01:00"), new BufferValue(1), Constants.DEFAULT, ""));
+        te.getResourceSets().add(new ResourceSet(ResourceSetSize.l, new BufferValue(1), 1, 1, new TimeUnit("01:00"), new BufferValue(1), Constants.DEFAULT, ""));
         return te;
     }
 

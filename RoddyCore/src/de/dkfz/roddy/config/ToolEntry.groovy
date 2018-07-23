@@ -104,9 +104,9 @@ class ToolEntry implements RecursiveOverridableMapContainer.Identifiable {
          * return all children and possibly (for everything but pure aggregate parameters) the file
          * itself and all its children. The getAllChildFiles returns all children recursively.
          */
-        abstract List<? extends ToolParameterOfFiles> getAllFiles();
+        abstract List<ToolParameterOfFiles> getAllFiles();
 
-        abstract List<? extends ToolParameterOfFiles> getFiles();
+        abstract List<ToolParameterOfFiles> getFiles();
     }
 
     public final String id;

@@ -61,6 +61,12 @@ class Job extends BEJob<BEJob, BEJobResult> {
     protected final Map<String, Object> allRawInputParameters
 
     /**
+     * Keeps a list of all parameters after conversion and before removing them from the final parameter list
+     * (See keepOnlyEssentialParameters). The value is used for testrun and testrerun output.
+     */
+    final Map<String, String> reportedParameters = [:]
+
+    /**
      * Provide a list of files if you want to generate job dependencies.
      */
     public transient final List<BaseFile> parentFiles
@@ -195,6 +201,7 @@ class Job extends BEJob<BEJob, BEJobResult> {
         }
 
         parameters.putAll(convertResourceSetToParameters())
+        reportedParameters.putAll(parameters)
 
         this.parameters[PARM_WRAPPED_SCRIPT] = context.getConfiguration().getProcessingToolPath(context, toolID).getAbsolutePath()
         this.parameters[PARM_WRAPPED_SCRIPT_MD5] = getToolMD5(toolID, context)
@@ -505,7 +512,7 @@ class Job extends BEJob<BEJob, BEJobResult> {
      */
     void keepOnlyEssentialParameters() {
         Set<String> nonEssentialParameters = parameters.keySet().findAll { key ->
-            ! [PARAMETER_FILE, CONFIG_FILE, DEBUG_WRAP_IN_SCRIPT, APP_PROPERTY_BASE_ENVIRONMENT_SCRIPT, PRM_TOOL_ID].contains(key)
+            ![PARAMETER_FILE, CONFIG_FILE, DEBUG_WRAP_IN_SCRIPT, APP_PROPERTY_BASE_ENVIRONMENT_SCRIPT, PRM_TOOL_ID].contains(key)
         }
         parameters.keySet().removeAll(nonEssentialParameters)
     }
