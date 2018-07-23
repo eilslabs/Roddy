@@ -40,6 +40,8 @@ import de.dkfz.roddy.tools.LoggerWrapper
 import de.dkfz.roddy.tools.RoddyIOHelperMethods
 import groovy.transform.CompileStatic
 
+import java.nio.channels.FileChannel
+import java.nio.channels.FileLock
 import java.text.ParseException
 import java.util.concurrent.ExecutionException
 import java.util.logging.Level
@@ -195,7 +197,7 @@ abstract class ExecutionService implements BEExecutionService {
             throw new IOException("Job log file ${jobLog} does not exist")
 
         Long jobLogSize = FileSystemAccessProvider.instance.fileSize(jobLog)
-        Long maximumJobLogSize = context.configurationValues.get("maximumJobLogSize", (1024*1024*10).toString()).toLong()
+        Long maximumJobLogSize = context.configurationValues.get("maximumJobLogSize", (1024 * 1024 * 10).toString()).toLong()
         if (jobLogSize > maximumJobLogSize)
             throw new IOException("Job log file of ${jobLogSize} byte is larger than permitted size ${maximumJobLogSize}")
 
@@ -322,7 +324,7 @@ abstract class ExecutionService implements BEExecutionService {
             def userGroup = context.getOutputGroupString()
             boolean isGroupAvailable = FileSystemAccessProvider.getInstance().isGroupAvailable(userGroup)
             if (!isGroupAvailable) {
-                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The requested user group ${userGroup} is not available on the target system.\n\tDisable Roddys access rights managemd by setting outputAllowAccessRightsModification to true or\n\tSelect a proper group by setting outputFileGroup."))
+                context.addErrorEntry(ExecutionContextError.EXECUTION_SETUP_INVALID.expand("The requested user group ${userGroup} is not available on the target system.\n\t\tDisable Roddys access rights management by setting outputAllowAccessRightsModification to true or\n\t\tSelect a proper group by setting outputFileGroup."))
                 valid = false
             }
         }
@@ -456,7 +458,7 @@ abstract class ExecutionService implements BEExecutionService {
         File roddyBundledFilesDirectory = Roddy.getBundledFilesDirectory()
 
         provider.checkDirectories([executionBaseDirectory, executionDirectory, temporaryDirectory, lockFilesDirectory], context, true)
-        if(context.executionContextLevel.allowedToSubmitJobs){
+        if (context.executionContextLevel.allowedToSubmitJobs) {
             logger.always("Creating the following execution directory to store information about this process:")
             logger.always("\t${executionDirectory.getAbsolutePath()}")
         }
@@ -696,30 +698,75 @@ abstract class ExecutionService implements BEExecutionService {
         }
     }
 
+    /**
+     * The cache stores md5 sums for previous method calls.
+     */
+    Map<File, String> _cacheForCompressToolFolderMD5s = [:]
+
     CompressedArchiveInfo compressToolFolder(File folder, PluginInfo pInfo) {
+        synchronized (mapOfPreviouslyCompressedArchivesByFolder) {
+            if (mapOfPreviouslyCompressedArchivesByFolder[folder])
+                return mapOfPreviouslyCompressedArchivesByFolder[folder]
+        }
         long startSingleCompression = System.nanoTime()
 
         // Md5sum from tempFolder
-        String md5sum = RoddyIOHelperMethods.getSingleMD5OfFilesInDirectoryIncludingDirectoryNamesAndPermissions(folder)
-        String zipFilename = "cTools_${pInfo.getName()}:${pInfo.getProdVersion()}_${folder.getName()}.zip"
-        String zipMD5Filename = zipFilename + "_contentmd5"
-        File zipFile = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipFilename)
-        File zipMD5File = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipMD5Filename)
-        boolean createNew = false
-        if (!zipFile.exists())
-            createNew = true
-
-        if (!zipMD5File.exists() || zipMD5File.text.trim() != md5sum)
-            createNew = true
-
-        if (createNew) {
-            RoddyIOHelperMethods.compressDirectory(folder, zipFile)
-            zipMD5File << md5sum
+        String md5sum
+        synchronized (_cacheForCompressToolFolderMD5s) {
+            if (!_cacheForCompressToolFolderMD5s[folder])
+                _cacheForCompressToolFolderMD5s[folder] = RoddyIOHelperMethods.getSingleMD5OfFilesInDirectoryIncludingDirectoryNamesAndPermissions(folder)
+            md5sum = _cacheForCompressToolFolderMD5s[folder]
         }
 
-        String newArchiveMD5 = md5sum
-        if (zipFile.size() == 0)
-            logger.severe("The size of archive ${zipFile.getName()} is 0!")
+        String zipFilename = "cTools_${pInfo.getName()}:${pInfo.getProdVersion()}_${folder.getName()}.zip"
+        String lockFilename = "cTools_${pInfo.getName()}:${pInfo.getProdVersion()}_${folder.getName()}.zip.lock"
+        String zipMD5Filename = zipFilename + "_contentmd5"
+        File zipFile = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipFilename)
+        File zipLock = new File(Roddy.getCompressedAnalysisToolsDirectory(), lockFilename)
+        File zipMD5File = new File(Roddy.getCompressedAnalysisToolsDirectory(), zipMD5Filename)
+        boolean createNew = false
+        String newArchiveMD5
+        FileChannel lockChannel = new RandomAccessFile(zipLock, "rw").getChannel()
+        FileLock flock = lockChannel.lock()
+        if (!flock)
+            throw new IOException(
+                    "Could not get a hold on a file lock for a compressed tool folder. Please take a close look at ${Roddy.getCompressedAnalysisToolsDirectory()}.\n" +
+                            "  - Make sure, no Roddy instance is running\n" +
+                            "  - Remove any file locks (ending .lock)\n" +
+                            "  - Try again")
+
+        try {
+            if (!zipFile.exists() || zipFile.size() == 0)
+                createNew = true
+
+            if (!zipMD5File.exists() || zipMD5File.text.trim() != md5sum)
+                createNew = true
+
+            if (createNew) {
+                RoddyIOHelperMethods.compressDirectory(folder, zipFile)
+                zipMD5File.text = md5sum
+
+                if (zipFile.size() == 0)
+                    logger.severe("The size of archive ${zipFile.getName()} is 0!")
+
+                // Check contents
+                File testunzipTargetFolder = File.createTempDir()
+                try {
+                    RoddyIOHelperMethods.decompressFile(zipFile, testunzipTargetFolder)
+                    String tgtMD5 = RoddyIOHelperMethods.getSingleMD5OfFilesInDirectoryIncludingDirectoryNamesAndPermissions(new File(testunzipTargetFolder, folder.name))
+                    if (md5sum != tgtMD5)
+                        throw new IOException("Compressed and decompressed files for tool directory ${folder} don't match!")
+                } finally {
+                    testunzipTargetFolder.deleteDir()
+                }
+            }
+
+            newArchiveMD5 = md5sum
+        } finally {
+            if (flock) flock.release()
+            lockChannel.close()
+        }
+
         CompressedArchiveInfo resultArchive = new CompressedArchiveInfo(zipFile, newArchiveMD5, folder)
         synchronized (mapOfPreviouslyCompressedArchivesByFolder) {
             mapOfPreviouslyCompressedArchivesByFolder[folder] = resultArchive
@@ -753,9 +800,14 @@ abstract class ExecutionService implements BEExecutionService {
             File subFolder, PluginInfo pInfo ->
                 if (!subFolder.isDirectory())
                     return
-                File localFile = mapOfPreviouslyCompressedArchivesByFolder[subFolder].localArchive
-                File remoteFile = new File(mapOfPreviouslyCompressedArchivesByFolder[subFolder].localArchive.getName()[0..-5] + "_" + context.getTimestampString() + ".zip")
-                String archiveMD5 = mapOfPreviouslyCompressedArchivesByFolder[subFolder].md5
+                File localFile
+                File remoteFile
+                String archiveMD5
+                synchronized (mapOfPreviouslyCompressedArchivesByFolder) {
+                    localFile = mapOfPreviouslyCompressedArchivesByFolder[subFolder].localArchive
+                    remoteFile = new File(mapOfPreviouslyCompressedArchivesByFolder[subFolder].localArchive.getName()[0..-5] + "_" + context.getTimestampString() + ".zip")
+                    archiveMD5 = mapOfPreviouslyCompressedArchivesByFolder[subFolder].md5
+                }
 
                 String foundExisting = null
                 String subFolderOnRemote = subFolder.getName()

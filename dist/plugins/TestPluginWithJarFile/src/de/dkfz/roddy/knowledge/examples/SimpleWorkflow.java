@@ -19,15 +19,15 @@ public class SimpleWorkflow extends Workflow {
     @Override
     public boolean execute(ExecutionContext context) {
         SimpleRuntimeService srs = (SimpleRuntimeService) context.getRuntimeService();
-        BaseFile abc = getSourceFile(context, "/tmp/test.txt");
+        BaseFile abc = getSourceFile("/tmp/test.txt");
         SimpleTestTextFile initialTextFile = srs.createInitialTextFile(context);
         SimpleTestTextFile textFile1 = initialTextFile.test1(); //(TextFile) GenericMethod.callGenericTool("testScript", initialTextFile);
-        call("testScriptWithParams", textFile1, "aJobParameter=A_JOB_PARAMETER_VALUE");
+        run("testScriptWithParams", textFile1, "aJobParameter=A_JOB_PARAMETER_VALUE");
         SimpleTestTextFile textFile2 = textFile1.test2();//(TextFile) GenericMethod.callGenericTool("testScript", textFile1);
-        if (getflag(context, "runWithErrors", true))
-            textFile2.test3(); //(TextFile) GenericMethod.callGenericTool("testScriptExitBad", textFile2);
-        Tuple4 mout1 = (Tuple4) call("testScriptWithMultiOut", textFile2);
-        Tuple4 mout2 = (Tuple4) call("testScriptWithMultiOut2", textFile2);
+        if (getFlag("runWithErrors", true))
+            textFile2.test3();
+        Tuple4 mout1 = (Tuple4) run("testScriptWithMultiOut", textFile2);
+        Tuple4 mout2 = (Tuple4) run("testScriptWithMultiOut2", textFile2);
         return true;
     }
 }
